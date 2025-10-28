@@ -45,7 +45,7 @@ npm start
 - **@types/node**: ^24.9.1 - Node.js 타입 정의
 
 ## 📁 폴더 구조
-
+```
 yojeong_be/
 ├── src/
 │   ├── controller/      # 컨트롤러 로직
@@ -57,3 +57,4 @@ yojeong_be/
 ├── tsconfig.json        # TypeScript 설정
 ├── package.json         # 프로젝트 의존성 및 스크립트
 └── README.md            # 프로젝트 문서
+```
