@@ -15,15 +15,15 @@ export async function saveSummary(input: SummaryInput) {
   try {
     const result = await pool.query(
       `INSERT INTO summaries (
-         user_id,
-         original_text,
-         original_url,
-         difficulty_level,
-         user_summary,
-         critical_weakness,
-         critical_opposite,
-         critical_application
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           user_id,
+           original_text,
+           original_url,
+           difficulty_level,
+           user_summary,
+           critical_weakness,
+           critical_opposite,
+           critical_application
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.userId,
         input.originalText,
@@ -39,16 +39,6 @@ export async function saveSummary(input: SummaryInput) {
     return { id: result.insertId }; // 새로 생성된 summary의 ID 반환
   } catch (error) {
     console.error("Summary 저장 실패:", error);
-    throw error;
-  }
-}
-
-export async function getTestSummary() {
-  try {
-    const result = await pool.query("SELECT * FROM summaries LIMIT 1");
-    return result[0] || [{ id: 0, summary: "테스트지롱" }];
-  } catch (error) {
-    console.error("Summary 조회 실패:", error);
     throw error;
   }
 }
