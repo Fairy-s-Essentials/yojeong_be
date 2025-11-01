@@ -46,8 +46,6 @@ class GeminiService {
       throw new Error('AI 응답 생성에 실패했습니다.');
     }
   }
-
-  generatePrompt(input: string) {}
 }
 
 export default new GeminiService();
