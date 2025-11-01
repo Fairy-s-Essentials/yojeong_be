@@ -41,10 +41,11 @@ export async function insertUserInput(input: SummaryInput): Promise<number> {
  */
 export async function findSummaryById(id: number) {
   try {
-    const [result] = await pool.query('SELECT * FROM summaries WHERE id = ?', [
-      id
-    ]);
-    return result;
+    const rows = await pool.query(
+      'SELECT * FROM summaries WHERE id = ?',
+      [id]
+    );
+    return rows[0] || null; // 데이터가 없으면 null 반환
   } catch (error) {
     console.error('Summary 조회 실패:', error);
     throw error;
