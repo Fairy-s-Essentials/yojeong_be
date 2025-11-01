@@ -1,8 +1,8 @@
-import { Router } from "express";
-import summaryRouter from "./summaryRouter";
+import { Router } from 'express';
+import summaryRouter from './summaryRouter';
 
 const RootRouter = Router();
 
-RootRouter.use("/summaries", summaryRouter);
+RootRouter.use('/summaries', summaryRouter);
 
 export default RootRouter;
