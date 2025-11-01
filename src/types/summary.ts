@@ -3,7 +3,7 @@ export interface SummaryInput {
   userId: number;
   originalText: string;
   originalUrl?: string | null;
-  difficultyLevel?: 1 | 2 | 3;
+  difficultyLevel?: 1 | 2 | 3 | 4 | 5;
   userSummary: string;
   criticalWeakness?: string;
   criticalOpposite?: string;
