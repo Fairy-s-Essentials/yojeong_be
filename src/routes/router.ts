@@ -3,6 +3,6 @@ import summaryRouter from "./summaryRouter";
 
 const RootRouter = Router();
 
-RootRouter.use("/summary", summaryRouter);
+RootRouter.use("/summaries", summaryRouter);
 
 export default RootRouter;
