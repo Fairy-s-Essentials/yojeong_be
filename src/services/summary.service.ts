@@ -1,14 +1,18 @@
-import { pool } from "../config/db";
-import { analyzeUserSummary } from "./ai.service";
-import { SummaryInput, SummaryResponse } from "../types/summary";
-import { insertUserInput, findSummaryById, updateAIAnalysis } from "../models/summary.model";
+import { pool } from '../config/db';
+import { analyzeUserSummary } from './ai.service';
+import { SummaryInput, SummaryResponse } from '../types/summary';
+import {
+  insertUserInput,
+  findSummaryById,
+  updateAIAnalysis
+} from '../models/summary.model';
 
 export async function getTestSummary() {
   try {
-    const result = await pool.query("SELECT * FROM summaries LIMIT 1");
-    return result[0] || [{ id: 0, summary: "테스트지롱" }];
+    const result = await pool.query('SELECT * FROM summaries LIMIT 1');
+    return result[0] || [{ id: 0, summary: '테스트지롱' }];
   } catch (error) {
-    console.error("Summary 조회 실패:", error);
+    console.error('Summary 조회 실패:', error);
     throw error;
   }
 }
@@ -32,14 +36,14 @@ export async function createSummary(
       similarityScore: aiAnalysis.similarityScore,
       aiWellUnderstood: aiAnalysis.aiWellUnderstood,
       aiMissedPoints: aiAnalysis.aiMissedPoints,
-      aiImprovements: aiAnalysis.aiImprovements,
+      aiImprovements: aiAnalysis.aiImprovements
     });
 
     // 생성된 데이터 조회
     const savedSummary = await findSummaryById(summaryId);
 
     if (!savedSummary) {
-      throw new Error("요약 정보를 찾을 수 없습니다.");
+      throw new Error('요약 정보를 찾을 수 없습니다.');
     }
 
     // 응답 형식으로 변환
@@ -59,10 +63,10 @@ export async function createSummary(
       aiMissedPoints: savedSummary.ai_missed_points,
       aiImprovements: savedSummary.ai_improvements,
       learningNote: savedSummary.learning_note || null,
-      createdAt: savedSummary.created_at,
+      createdAt: savedSummary.created_at
     };
   } catch (error) {
-    console.error("Summary 생성 실패:", error);
+    console.error('Summary 생성 실패:', error);
     throw error;
   }
 }

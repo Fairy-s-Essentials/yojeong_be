@@ -1,5 +1,5 @@
-import { pool } from "../config/db";
-import { AiSummaryResponse, SummaryInput } from "../types/summary";
+import { pool } from '../config/db';
+import { AiSummaryResponse, SummaryInput } from '../types/summary';
 
 /**
  * 사용자 입력값을 DB에 저장
@@ -25,13 +25,13 @@ export async function insertUserInput(input: SummaryInput): Promise<number> {
         input.userSummary,
         input.criticalWeakness,
         input.criticalOpposite,
-        input.criticalApplication,
+        input.criticalApplication
       ]
     );
 
     return result.insertId; // summaries 테이블의 id 컬럼 값
   } catch (error) {
-    console.error("Summary 저장 실패:", error);
+    console.error('Summary 저장 실패:', error);
     throw error;
   }
 }
@@ -41,13 +41,12 @@ export async function insertUserInput(input: SummaryInput): Promise<number> {
  */
 export async function findSummaryById(id: number) {
   try {
-    const [result] = await pool.query(
-      "SELECT * FROM summaries WHERE id = ?",
-      [id]
-    );
+    const [result] = await pool.query('SELECT * FROM summaries WHERE id = ?', [
+      id
+    ]);
     return result;
   } catch (error) {
-    console.error("Summary 조회 실패:", error);
+    console.error('Summary 조회 실패:', error);
     throw error;
   }
 }
@@ -71,11 +70,11 @@ export async function updateAIAnalysis(id: number, aiData: AiSummaryResponse) {
         JSON.stringify(aiData.aiWellUnderstood),
         JSON.stringify(aiData.aiMissedPoints),
         JSON.stringify(aiData.aiImprovements),
-        id,
+        id
       ]
     );
   } catch (error) {
-    console.error("AI 분석 결과 업데이트 실패:", error);
+    console.error('AI 분석 결과 업데이트 실패:', error);
     throw error;
   }
 }
