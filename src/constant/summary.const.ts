@@ -1,0 +1,14 @@
+export const SUMMARY_NUM_OF_CHARACTER = {
+  SHORT: {
+    ORIGINAL_TEXT: 2000,
+    AI_SUMMARY: 300
+  },
+  MEDIUM: {
+    ORIGINAL_TEXT: 3500,
+    AI_SUMMARY: 450
+  },
+  LONG: {
+    ORIGINAL_TEXT: 5000,
+    AI_SUMMARY: 600
+  }
+} as const;

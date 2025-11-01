@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { getPrompt, UserInput } from '../utils/prompt.util';
+import { getAiSummaryNumOfCharacterByOriginalText } from '../utils/summary.util';
 
 class GeminiService {
   private readonly genAI: GoogleGenAI;
@@ -19,7 +20,10 @@ class GeminiService {
    * @returns AI 생성 텍스트 응답
    */
   async generateContent(userInput: UserInput) {
-    const prompt = getPrompt({ ...userInput, numOfCharacter: 300 });
+    const numOfCharacter = getAiSummaryNumOfCharacterByOriginalText(
+      userInput.originalText
+    );
+    const prompt = getPrompt({ ...userInput, numOfCharacter });
 
     try {
       const response = await this.genAI.models.generateContent({
