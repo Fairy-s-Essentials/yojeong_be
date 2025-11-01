@@ -2,6 +2,8 @@ interface PromptInput {
   originalText: string;
   userSummary: string;
   numOfCharacter?: number;
+  weakness?: string;
+  opposition?: string;
 }
 
 export type UserInput = Omit<PromptInput, 'numOfCharacter'>;
@@ -9,7 +11,9 @@ export type UserInput = Omit<PromptInput, 'numOfCharacter'>;
 export const getPrompt = ({
   originalText,
   userSummary,
-  numOfCharacter = 300
+  numOfCharacter = 300,
+  weakness,
+  opposition
 }: PromptInput) => {
   return `
     당신은 텍스트 요약 전문가이자 평가자입니다.
