@@ -7,6 +7,6 @@ import {
 const mainRouter = Router();
 
 mainRouter.get('/analysis', getMainAnalysisController);
-mainRouter.get('/recent-summaries', getMainRecentSummaryController);
+mainRouter.get('/recent-summary', getMainRecentSummaryController);
 
 export default mainRouter;
