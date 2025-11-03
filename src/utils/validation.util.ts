@@ -1,12 +1,8 @@
-import { SummaryInput } from '../types/summary';
-
-interface ValidationError {
-  [key: string]: string;
-}
+import { CreateSummaryReqBody } from '../types/summary';
 
 interface ValidationResult {
   isValid: boolean;
-  errors: ValidationError;
+  message: string;
 }
 
 /**
@@ -29,32 +25,44 @@ const getMaxSummaryLength = (textLength: number): number | null => {
 /**
  * Summary 생성 입력값 검증
  */
-export function validateSummaryInput(input: SummaryInput): ValidationResult {
-  const errors: ValidationError = {};
-
+export function validateSummaryInput(
+  input: CreateSummaryReqBody
+): ValidationResult {
   // originalText 검증
   if (isEmpty(input.originalText)) {
-    errors.originalText = '원문은 필수 입력값입니다.';
+    return {
+      isValid: false,
+      message: '원문은 필수 입력값입니다.'
+    };
   } else if (
     input.originalText.length < 1000 ||
     input.originalText.length > 5000
   ) {
-    errors.originalText = '원문은 1000자 이상 5000자 이하여야 합니다.';
+    return {
+      isValid: false,
+      message: '원문은 1000자 이상 5000자 이하여야 합니다.'
+    };
   }
 
   // userSummary 검증
   if (isEmpty(input.userSummary)) {
-    errors.userSummary = '요약은 필수 입력값입니다.';
+    return {
+      isValid: false,
+      message: '요약은 필수 입력값입니다.'
+    };
   } else {
     const maxLength = getMaxSummaryLength(input.originalText.length);
-    
+
     if (maxLength && input.userSummary.length > maxLength) {
-      errors.userSummary = `요약은 ${maxLength}자 이하여야 합니다.`;
+      return {
+        isValid: false,
+        message: `요약은 ${maxLength}자 이하여야 합니다.`
+      };
     }
   }
 
   return {
-    isValid: Object.keys(errors).length === 0,
-    errors
+    isValid: true,
+    message: '검증 성공'
   };
 }
