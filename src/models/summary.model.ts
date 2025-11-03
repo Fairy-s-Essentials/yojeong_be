@@ -139,7 +139,7 @@ export const getScoreAverageByUserId = async (userId: number) => {
 
     const result: any = await pool.query(query, params);
     const converted = convertBigIntToNumber(result);
-    return converted[0]?.avg || 0;
+    return Math.round(converted[0]?.avg || 0);
   } catch (error) {
     console.error('평균정확도 조회 실패:', error);
     throw new Error('평균정확도 조회 실패');
