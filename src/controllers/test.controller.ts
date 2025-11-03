@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import geminiService from '../services/gemini.service';
-import { UserInput } from '../utils/prompt.util';
 
 export const testGeminiController = async (
-  req: Request<undefined, undefined, UserInput>,
+  req: Request<undefined, undefined>,
   res: Response,
   next: NextFunction
 ) => {

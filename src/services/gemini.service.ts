@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
-import { getPrompt, UserInput } from '../utils/prompt.util';
+import { getPrompt } from '../utils/prompt.util';
 import { getAiSummaryNumOfCharacterByOriginalText } from '../utils/summary.util';
+import { GeminiGenerateContentProps } from '../types/gemini';
 
 class GeminiService {
   private readonly genAI: GoogleGenAI;
@@ -19,7 +20,7 @@ class GeminiService {
    * @param prompt - 입력 텍스트
    * @returns AI 생성 텍스트 응답
    */
-  async generateContent(userInput: UserInput) {
+  async generateContent(userInput: GeminiGenerateContentProps) {
     const numOfCharacter = getAiSummaryNumOfCharacterByOriginalText(
       userInput.originalText
     );
@@ -33,14 +34,16 @@ class GeminiService {
           responseMimeType: 'application/json',
           responseJsonSchema: {
             aiSummary: 'string',
-            similarity: 'number',
-            reason: 'string'
+            similarityScore: 'number',
+            aiWellUnderstood: 'string[]',
+            aiMissedPoints: 'string[]',
+            aiImprovements: 'string[]'
           }
         }
       });
-      console.log('response', response);
+
       const parsedResponse = JSON.parse(response?.text || '{}');
-      console.log('-------------------------------');
+
       return parsedResponse;
     } catch (error) {
       console.error('Gemini API 호출 중 오류 발생:', error);

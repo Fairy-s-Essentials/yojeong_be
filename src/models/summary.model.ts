@@ -1,89 +1,52 @@
 import { pool } from '../config/db';
 
-import { AiSummaryResponse, SummaryInput } from '../types/summary';
-
-
-/**
- * 사용자 입력값을 DB에 저장
- */
-export async function insertUserInput(input: SummaryInput): Promise<number> {
-  try {
-    const result = await pool.query(
-      `INSERT INTO summaries (
-        user_id,
-        original_text,
-        original_url,
-        difficulty_level,
-        user_summary,
-        critical_weakness,
-        critical_opposite,
-        critical_application
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        input.userId,
-        input.originalText,
-        input.originalUrl || null,
-        input.difficultyLevel,
-        input.userSummary,
-        input.criticalWeakness,
-        input.criticalOpposite,
-        input.criticalApplication
-      ]
-    );
-
-    return result.insertId; // summaries 테이블의 id 컬럼 값
-  } catch (error) {
-    console.error('Summary 저장 실패:', error);
-    throw error;
-  }
-}
+import { InsertSummaryModel } from '../types/summary';
 
 /**
- * ID로 Summary 조회
+ * 요약 데이터를 삽입하는 함수
+ * @param inputData - 삽입할 요약 데이터
+ * @returns - 삽입된 요약 ID
  */
-export async function findSummaryById(id: number) {
+export const insertSummary = async (inputData: InsertSummaryModel) => {
   try {
-    const rows = await pool.query(
-      'SELECT * FROM summaries WHERE id = ?',
-      [id]
-    );
-    return rows[0] || null; // 데이터가 없으면 null 반환
+    const query = `
+    INSERT INTO summaries
+    (user_id, original_text, original_url, difficulty_level, user_summary, critical_weakness, critical_opposite, ai_summary, similarity_score, ai_well_understood, ai_missed_points, ai_improvements)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const params = [
+      inputData.userId,
+      inputData.originalText,
+      inputData.originalUrl,
+      inputData.difficultyLevel,
+      inputData.userSummary,
+      inputData.criticalWeakness,
+      inputData.criticalOpposite,
+      inputData.aiSummary,
+      inputData.similarityScore,
+      JSON.stringify(inputData.aiWellUnderstood),
+      JSON.stringify(inputData.aiMissedPoints),
+      JSON.stringify(inputData.aiImprovements)
+    ];
+
+    const result = await pool.query(query, params);
+    return result.insertId;
   } catch (error) {
-    console.error('Summary 조회 실패:', error);
-    throw error;
+    if (error instanceof Error) {
+      console.error('Summary 저장 실패:', error.message);
+    } else {
+      console.error('Summary 저장 실패:', error);
+    }
+    throw new Error('Summary 저장 실패');
   }
-}
+};
 
 /**
- * Summary의 AI 분석 결과 업데이트
+ * 사용자의 최근 요약 데이터를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @returns - 최근 요약 데이터
  */
-export async function updateAIAnalysis(id: number, aiData: AiSummaryResponse) {
-  try {
-    await pool.query(
-      `UPDATE summaries
-       SET ai_summary = ?,
-           similarity_score = ?,
-           ai_well_understood = ?,
-           ai_missed_points = ?,
-           ai_improvements = ?
-       WHERE id = ?`,
-      [
-        aiData.aiSummary,
-        aiData.similarityScore,
-        JSON.stringify(aiData.aiWellUnderstood),
-        JSON.stringify(aiData.aiMissedPoints),
-        JSON.stringify(aiData.aiImprovements),
-        id
-      ]
-    );
-  } catch (error) {
-
-    console.error('AI 분석 결과 업데이트 실패:', error);
-
-    throw error;
-  }
-}
-
 export const getRecentSummary = async (userId: number) => {
   try {
     const query = `
