@@ -3,6 +3,40 @@ import { pool } from '../config/db';
 import { InsertSummaryModel } from '../types/summary';
 
 /**
+ * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
+ */
+const convertBigIntToNumber = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => convertBigIntToNumber(item));
+  }
+
+  if (typeof obj === 'object') {
+    const converted: any = {};
+    for (const key in obj) {
+      const value = obj[key];
+      if (typeof value === 'bigint') {
+        converted[key] = Number(value);
+      } else if (typeof value === 'object') {
+        converted[key] = convertBigIntToNumber(value);
+      } else {
+        converted[key] = value;
+      }
+    }
+    return converted;
+  }
+
+  if (typeof obj === 'bigint') {
+    return Number(obj);
+  }
+
+  return obj;
+};
+
+/**
  * 요약 데이터를 삽입하는 함수
  * @param inputData - 삽입할 요약 데이터
  * @returns - 삽입된 요약 ID
@@ -50,13 +84,15 @@ export const insertSummary = async (inputData: InsertSummaryModel) => {
 export const getRecentSummary = async (userId: number) => {
   try {
     const query = `
-    SELECT * FROM summaries WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT 3
+    SELECT id, user_summary, similarity_score, created_at FROM summaries WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT 3
     `;
 
     const params = [userId];
 
-    const result = await pool.query(query, params);
-    return result[0] || [];
+    const result: any = await pool.query(query, params);
+
+    // 모든 BigInt 필드를 Number로 변환
+    return convertBigIntToNumber(result || []);
   } catch (error) {
     console.error('최근 요약 조회 실패:', error);
     // 커스텀 에러 메시지로 throw
@@ -74,13 +110,14 @@ export const getRecentSummary = async (userId: number) => {
 export const getWeeklySummaryCountByUserId = async (userId: number) => {
   try {
     const query = `
-    SELECT COUNT(*) FROM summaries WHERE user_id = ? AND is_deleted = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
+    SELECT COUNT(*) as count FROM summaries WHERE user_id = ? AND is_deleted = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
     `;
 
     const params = [userId];
 
-    const result = await pool.query(query, params);
-    return result[0].count;
+    const result: any = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return converted[0]?.count || 0;
   } catch (error) {
     console.error('주간 요약 조회 실패:', error);
     throw new Error('주간 요약 조회 실패');
@@ -95,13 +132,14 @@ export const getWeeklySummaryCountByUserId = async (userId: number) => {
 export const getScoreAverageByUserId = async (userId: number) => {
   try {
     const query = `
-    SELECT AVG(similarity_score) FROM summaries WHERE user_id = ? AND is_deleted = 0
+    SELECT AVG(similarity_score) as avg FROM summaries WHERE user_id = ? AND is_deleted = 0
     `;
 
     const params = [userId];
 
-    const result = await pool.query(query, params);
-    return result[0].avg;
+    const result: any = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return converted[0]?.avg || 0;
   } catch (error) {
     console.error('평균정확도 조회 실패:', error);
     throw new Error('평균정확도 조회 실패');
@@ -124,7 +162,8 @@ export const getContinuousLearningDaysByUserId = async (userId: number) => {
       ORDER BY summary_date DESC
     `;
     const params = [userId];
-    const [rows]: any = await pool.query(query, params);
+    const result: any = await pool.query(query, params);
+    const rows = convertBigIntToNumber(result);
 
     if (!rows || rows.length === 0) {
       return 0;
