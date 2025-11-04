@@ -139,6 +139,7 @@ export const getSummaryDetailByIdController = async (
       aiWellUnderstood: JSON.parse(summary.ai_well_understood),
       aiMissedPoints: JSON.parse(summary.ai_missed_points),
       aiImprovements: JSON.parse(summary.ai_improvements),
+      learningNote: summary.learning_note,
       createdAt: summary.created_at
     };
 
