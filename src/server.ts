@@ -1,11 +1,19 @@
 import express from "express";
 import type { Request, Response } from "express";
 import session from "express-session";
+import cors from "cors";
 import { pool } from "./config/db";
 import RootRouter from "./routes/router";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true, 
+  })
+);
 
 // 세션 설정
 app.use(
@@ -23,7 +31,7 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api", RootRouter);
+app.use(RootRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, TypeScript + Express!");
