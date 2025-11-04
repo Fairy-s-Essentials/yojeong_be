@@ -6,12 +6,13 @@ import { DbUser, DbInsertResult } from '../types/database';
 export class UserModel {
   /**
    * DB 타입을 서비스 타입으로 변환
+   * @todo BigInt -> int로 제거 후 id 부분 수정
    * @param dbUser - DB에서 조회한 사용자 데이터
    * @returns 서비스에서 사용할 사용자 타입
    */
   private static dbToUser(dbUser: DbUser): User {
     return {
-      id: dbUser.id,
+      id: Number(dbUser.id), // BigInt -> number 변환 (세션 직렬화를 위해)
       kakao_id: Number(dbUser.kakao_id), // VARCHAR -> number 변환
       email: dbUser.email || undefined,
       nickname: dbUser.nickname,
