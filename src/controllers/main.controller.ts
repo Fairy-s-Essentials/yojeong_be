@@ -34,18 +34,18 @@ export const getMainRecentSummaryController = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log('getRecentSummaryController');
+  console.log('getMainRecentSummaryController');
   try {
     //TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
     const userId = 1;
     const summary = await getRecentSummary(userId);
 
-    const returnData = {
-      id: summary.id,
-      similarityScore: summary.similarity_score,
-      userSummary: summary.user_summary,
-      createdAt: summary.created_at
-    };
+    const returnData = summary.map((item: any) => ({
+      id: item.id,
+      similarityScore: item.similarity_score,
+      userSummary: item.user_summary,
+      createdAt: item.created_at
+    }));
 
     return res.status(200).json({
       success: true,
