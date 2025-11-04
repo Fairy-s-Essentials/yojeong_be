@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import {
   getRecentSummary,
+  getScoreAverageByUserId,
   getSummaryDetailById,
   insertSummary
 } from '../models/summary.model';
@@ -119,7 +120,11 @@ export const getSummaryDetailByIdController = async (
   next: NextFunction
 ) => {
   try {
+    const userId = 1;
     const { id } = req.params;
+
+    const averageScore = await getScoreAverageByUserId(userId);
+
     const summary = await getSummaryDetailById(Number(id));
     const returnData = {
       id: summary.id,
@@ -130,6 +135,7 @@ export const getSummaryDetailByIdController = async (
       criticalOpposite: summary.critical_opposite,
       aiSummary: summary.ai_summary,
       similarityScore: summary.similarity_score,
+      averageScore,
       aiWellUnderstood: JSON.parse(summary.ai_well_understood),
       aiMissedPoints: JSON.parse(summary.ai_missed_points),
       aiImprovements: JSON.parse(summary.ai_improvements),
