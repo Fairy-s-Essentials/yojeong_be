@@ -2,7 +2,8 @@ import { Router } from 'express';
 
 import {
   getSummaryController,
-  createSummaryController
+  createSummaryController,
+  getSummaryDetailByIdController
 } from '../controllers/summary.controller';
 
 const summaryRouter = Router();
@@ -10,5 +11,7 @@ const summaryRouter = Router();
 summaryRouter.get('/test', getSummaryController);
 
 summaryRouter.post('/', createSummaryController);
+
+summaryRouter.get('/:id', getSummaryDetailByIdController);
 
 export default summaryRouter;
