@@ -49,26 +49,12 @@ export class AuthController {
       req.session.user = user;
       req.session.accessToken = accessToken;
 
-      // 로그인 성공 응답
-      res.status(200).json({
-        success: true,
-        message: '로그인 성공',
-        data: {
-          user: {
-            id: user.id,
-            kakao_id: user.kakao_id,
-            nickname: user.nickname,
-            email: user.email,
-            profile_image: user.profile_image,
-          },
-        },
-      });
+      // 프론트엔드 콜백 페이지로 리다이렉트
+      res.redirect('http://localhost:5173/auth/callback?success=true');
     } catch (error) {
       console.error('카카오 콜백 오류:', error);
-      res.status(500).json({
-        success: false,
-        message: '로그인 처리 중 오류가 발생했습니다.',
-      });
+      // 로그인 실패 시 프론트엔드로 리다이렉트
+      res.redirect('http://localhost:5173/auth/callback?success=false&error=login_failed');
     }
   }
 
