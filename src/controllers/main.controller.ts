@@ -39,10 +39,18 @@ export const getMainRecentSummaryController = async (
     //TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
     const userId = 1;
     const summary = await getRecentSummary(userId);
+
+    const returnData = {
+      id: summary.id,
+      similarityScore: summary.similarity_score,
+      userSummary: summary.user_summary,
+      createdAt: summary.created_at
+    };
+
     return res.status(200).json({
       success: true,
       message: '최근 요약 조회 성공',
-      data: summary
+      data: returnData
     });
   } catch (error) {
     next(error);
