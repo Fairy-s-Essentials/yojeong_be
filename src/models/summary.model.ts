@@ -15,6 +15,11 @@ const convertBigIntToNumber = (obj: any): any => {
   }
 
   if (typeof obj === 'object') {
+    // Date 객체는 그대로 반환
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     const converted: any = {};
     for (const key in obj) {
       const value = obj[key];
@@ -194,4 +199,14 @@ export const getContinuousLearningDaysByUserId = async (userId: number) => {
     console.error('연속 학습일 조회 실패:', error);
     throw new Error('연속 학습일 조회 실패');
   }
+};
+
+export const getSummaryDetailById = async (id: number) => {
+  const query = `
+  SELECT * FROM summaries WHERE id = ? AND is_deleted = 0
+  `;
+  const params = [id];
+  const result: any = await pool.query(query, params);
+  console.log(result);
+  return convertBigIntToNumber(result[0]);
 };
