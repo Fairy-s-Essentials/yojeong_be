@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { KakaoService } from '../services/kakao.service';
 import { AuthService } from '../services/auth.service';
+import { SessionUser } from '../types/session';
 
 export class AuthController {
   /**
@@ -45,16 +46,24 @@ export class AuthController {
       // 카카오 로그인 처리 (회원가입 + 로그인)
       const { user, accessToken } = await AuthService.kakaoLogin(code);
 
-      // 세션에 사용자 정보 저장
-      req.session.user = user;
+      // 세션에 사용자 정보 저장 (SessionUser 타입으로 변환)
+      const sessionUser: SessionUser = {
+        id: user.id!,
+        kakao_id: user.kakao_id,
+        nickname: user.nickname!,
+        email: user.email,
+        profile_image: user.profile_image,
+      };
+
+      req.session.user = sessionUser;
       req.session.accessToken = accessToken;
 
       // 프론트엔드 콜백 페이지로 리다이렉트
-      res.redirect('http://localhost:5173/auth/callback?success=true');
+      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
     } catch (error) {
       console.error('카카오 콜백 오류:', error);
       // 로그인 실패 시 프론트엔드로 리다이렉트
-      res.redirect('http://localhost:5173/auth/callback?success=false&error=login_failed');
+      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=false&error=login_failed`);
     }
   }
 
@@ -64,10 +73,10 @@ export class AuthController {
    */
   static async logout(req: Request, res: Response): Promise<void> {
     try {
-      const accessToken = req.session.accessToken;
+      const { accessToken } = req.session;
 
-      // 카카오 서버에 로그아웃 요청
-      if (accessToken) {
+      // 카카오 서버에 로그아웃 요청 (accessToken이 있는 경우만)
+      if (accessToken && typeof accessToken === 'string') {
         await AuthService.logout(accessToken);
       }
 
@@ -102,7 +111,7 @@ export class AuthController {
    */
   static async getCurrentUser(req: Request, res: Response): Promise<void> {
     try {
-      const user = req.session.user;
+      const { user } = req.session;
 
       // 로그인 상태 확인
       if (!user) {
@@ -141,8 +150,7 @@ export class AuthController {
    */
   static async unlink(req: Request, res: Response): Promise<void> {
     try {
-      const user = req.session.user;
-      const accessToken = req.session.accessToken;
+      const { user, accessToken } = req.session;
 
       // 로그인 상태 확인
       if (!user || !accessToken) {

@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: `${process.env.FRONTEND_URL}`,
     credentials: true, 
   })
 );
@@ -18,7 +18,7 @@ app.use(
 // 세션 설정
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "default_secret_key",
+    secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     cookie: {

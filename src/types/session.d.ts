@@ -1,14 +1,41 @@
-// 세션 타입 확장
-// express-session에 우리가 저장할 데이터 타입을 추가로 알려줌
-
 import 'express-session';
-import { User } from './kakao';
+import { SessionData } from 'express-session';
 
-// TypeScript의 "모듈 확장" 기능
-// express-session의 SessionData에 우리 필드를 추가
+/**
+ * 세션에 저장되는 사용자 정보 (최소한의 정보만 포함)
+ */
+export interface SessionUser {
+  id: number;
+  kakao_id: number;
+  nickname: string;
+  email?: string;
+  profile_image?: string;
+}
+
 declare module 'express-session' {
   interface SessionData {
-    user?: User; // 로그인한 사용자 정보
-    accessToken?: string; // 카카오 액세스 토큰
+    user?: SessionUser;
+    accessToken?: string;
   }
 }
+
+/**
+ * 세션에 user가 존재하는지 확인
+ */
+export declare function hasSessionUser(
+  session: SessionData
+): session is SessionData & { user: SessionUser };
+
+/**
+ * 세션에 accessToken이 존재하는지 확인
+ */
+export function hasAccessToken(
+  session: SessionData
+): session is SessionData & { accessToken: string };
+
+/**
+ * 세션에 user와 accessToken이 모두 존재하는지 확인
+ */
+export function isAuthenticated(
+  session: SessionData
+): session is SessionData & { user: SessionUser; accessToken: string };
