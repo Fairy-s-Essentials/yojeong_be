@@ -51,7 +51,7 @@ export class KakaoService {
       return response.data;
     } catch (error) {
       console.error('카카오 토큰 발급 오류:', error);
-      throw new Error('카카오 토큰 발급에 실패했습니다.');
+      throw new Error('카카오 토큰 발급에 실패했습니다.', { cause: error });
     }
   }
 
