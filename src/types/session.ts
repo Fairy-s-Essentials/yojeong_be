@@ -22,20 +22,29 @@ declare module 'express-session' {
 /**
  * 세션에 user가 존재하는지 확인
  */
-export declare function hasSessionUser(
+export function hasSessionUser(
   session: SessionData
 ): session is SessionData & { user: SessionUser };
+export function hasSessionUser(
+  session: SessionData
+): session is SessionData & { user: SessionUser } {
+  return session.user !== undefined;
+}
 
 /**
  * 세션에 accessToken이 존재하는지 확인
  */
 export function hasAccessToken(
   session: SessionData
-): session is SessionData & { accessToken: string };
+): session is SessionData & { accessToken: string } {
+  return session.accessToken !== undefined;
+}
 
 /**
  * 세션에 user와 accessToken이 모두 존재하는지 확인
  */
 export function isAuthenticated(
   session: SessionData
-): session is SessionData & { user: SessionUser; accessToken: string };
+): session is SessionData & { user: SessionUser; accessToken: string } {
+  return hasSessionUser(session) && hasAccessToken(session);
+}
