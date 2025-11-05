@@ -33,22 +33,22 @@ app.use(express.json());
 
 app.use(RootRouter);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, TypeScript + Express!");
+app.get('/', (req: Request, res: Response) => {
+  res.send('Hello, TypeScript + Express!');
 });
 
 // db 연결 임시 테스트 코드
-app.get("/test", async (req, res) => {
+app.get('/test', async (req, res) => {
   try {
     const conn = await pool.getConnection();
-    const rows = await conn.query("SELECT NOW() AS now");
+    const rows = await conn.query('SELECT NOW() AS now');
     conn.release();
     res.json(rows);
   } catch (err) {
-    console.error("DB 연결 실패:", err);
+    console.error('DB 연결 실패:', err);
     res
       .status(500)
-      .json({ message: "DB 연결 실패", error: (err as Error).message });
+      .json({ message: 'DB 연결 실패', error: (err as Error).message });
   }
 });
 

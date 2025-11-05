@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { getRecentSummary, insertSummary } from '../models/summary.model';
+import {
+  getRecentSummary,
+  getScoreAverageByUserId,
+  getSummaryDetailById,
+  insertSummary
+} from '../models/summary.model';
 import { validateSummaryInput } from '../utils/validation.util';
 import { getTestSummary } from '../services/summary.service';
 import { CreateSummaryReqBody } from '../types/summary';
@@ -17,26 +22,6 @@ export const getSummaryController = async (
     return res.status(200).json({
       success: true,
       message: 'Summary 조회 성공',
-      data: summary
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getRecentSummaryController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  console.log('getRecentSummaryController');
-  try {
-    //TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
-    const userId = 1;
-    const summary = await getRecentSummary(userId);
-    return res.status(200).json({
-      success: true,
-      message: '최근 요약 조회 성공',
       data: summary
     });
   } catch (error) {
@@ -96,7 +81,7 @@ export const createSummaryController = async (
       criticalOpposite
     });
 
-    await insertSummary({
+    const resultId = await insertSummary({
       userId,
       originalText,
       originalUrl,
@@ -111,7 +96,7 @@ export const createSummaryController = async (
     return res.status(200).json({
       success: true,
       message: 'Summary 생성 성공',
-      data: aiSummaryResponse
+      data: { resultId: Number(resultId) }
     });
   } catch (error: any) {
     // AI 서비스 에러 처리
@@ -125,6 +110,55 @@ export const createSummaryController = async (
       });
     }
 
+    next(error);
+  }
+};
+
+export const getSummaryDetailByIdController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = 1;
+    const { id } = req.params;
+
+    const averageScore = await getScoreAverageByUserId(userId);
+
+    const summary = await getSummaryDetailById(Number(id));
+    const returnData = {
+      id: summary.id,
+      originalText: summary.original_text,
+      originalUrl: summary.original_url,
+      userSummary: summary.user_summary,
+      criticalWeakness: summary.critical_weakness,
+      criticalOpposite: summary.critical_opposite,
+      aiSummary: summary.ai_summary,
+      similarityScore: summary.similarity_score,
+      averageScore,
+      aiWellUnderstood: JSON.parse(summary.ai_well_understood),
+      aiMissedPoints: JSON.parse(summary.ai_missed_points),
+      aiImprovements: JSON.parse(summary.ai_improvements),
+      learningNote: summary.learning_note,
+      createdAt: summary.created_at
+    };
+
+    if (returnData.id === null) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'SUMMARY_NOT_FOUND',
+          message: 'Summary를 찾을 수 없습니다.'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Summary 상세 조회 성공',
+      data: returnData
+    });
+  } catch (error) {
     next(error);
   }
 };
