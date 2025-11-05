@@ -164,17 +164,20 @@ export class AuthController {
       // 회원 탈퇴 처리
       await AuthService.unlink(accessToken, user.kakao_id);
 
-      // 세션 삭제
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('세션 삭제 오류:', err);
-        }
-      });
-
-      res.status(200).json({
-        success: true,
-        message: '회원 탈퇴가 완료되었습니다.',
-      });
+      req.session.destroy((err) => {  
+        if (err) {  
+          console.error('세션 삭제 오류:', err);  
+          return res.status(500).json({  
+            success: false,  
+            message: '회원 탈퇴 처리 중 세션 삭제에 실패했습니다.',  
+          });  
+        }  
+        res.status(200).json({  
+          success: true,  
+          message: '회원 탈퇴가 완료되었습니다.',  
+        });  
+      }); 
+      
     } catch (error) {
       console.error('회원 탈퇴 오류:', error);
       res.status(500).json({
