@@ -5,7 +5,8 @@ import {
   getContinuousLearningDaysByUserId,
   getRecentSummary,
   getSummaryCountByPeriod,
-  getScoreAverageByPeriod
+  getScoreAverageByPeriod,
+  getAccuracyTrendByPeriod
 } from '../models/summary.model';
 import { HistoryPeriod } from '../types/history';
 
@@ -99,6 +100,38 @@ export const getHistoryAnalysisController = async (
         summaryCount,
         averageScore,
         consecutiveDays
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 기간별 정확도 추이 데이터를 조회하는 컨트롤러
+ */
+export const getAccuracyTrendController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Query Parameter 추출 및 검증
+    const periodParam = typeof req.query.period === 'string' ? req.query.period : '7';
+    const period = validatePeriod(periodParam);
+
+    // TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
+    const userId = 1;
+
+    // Model 함수 호출
+    const dataPoints = await getAccuracyTrendByPeriod(userId, period);
+
+    // 응답 반환
+    return res.status(200).json({
+      success: true,
+      data: {
+        period,
+        dataPoints
       }
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
-import { HistoryPeriod } from '../types/history';
+import { HistoryPeriod, AccuracyDataPoint } from '../types/history';
 
 /**
  * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
@@ -281,5 +281,61 @@ export const getScoreAverageByPeriod = async (
   } catch (error) {
     console.error('기간별 평균 정확도 조회 실패:', error);
     throw new Error('기간별 평균 정확도 조회 실패');
+  }
+};
+
+/**
+ * 기간별 정확도 추이를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 날짜/월별 평균 점수와 학습 횟수 배열 (오래된 순 정렬)
+ */
+export const getAccuracyTrendByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<AccuracyDataPoint[]> => {
+  try {
+    let dateGroupBy: string;
+    let dateSelect: string;
+    let dateCondition = '';
+    const DAYS_INTERVAL = 'DAY';
+
+    // period에 따라 GROUP BY와 SELECT 절 결정
+    if (period === 'all') {
+      // 전체 기간: 월별 집계 (YYYY-MM)
+      dateSelect = "DATE_FORMAT(created_at, '%Y-%m')";
+      dateGroupBy = "DATE_FORMAT(created_at, '%Y-%m')";
+    } else {
+      // 7일/30일: 일별 집계 (YYYY-MM-DD)
+      dateSelect = 'DATE(created_at)';
+      dateGroupBy = 'DATE(created_at)';
+
+      // 날짜 조건 추가
+      if (period === 7) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
+      } else if (period === 30) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+      }
+    }
+
+    const query = `
+      SELECT 
+        ${dateSelect} as date,
+        ROUND(AVG(similarity_score)) as averageScore,
+        COUNT(*) as count
+      FROM summaries
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+      GROUP BY ${dateGroupBy}
+      ORDER BY date ASC
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted || [];
+  } catch (error) {
+    console.error('정확도 추이 조회 실패:', error);
+    throw new Error('정확도 추이 조회 실패');
   }
 };
