@@ -12,6 +12,11 @@ import {
 } from '../models/summary.model';
 import { HistoryPeriod } from '../types/history';
 import { sendAuthError } from '../utils/auth.util';
+import {
+  HISTORY_PERIOD,
+  DEFAULT_PERIOD,
+  YEAR_VALIDATION
+} from '../constant/history.const';
 
 export const getMainAnalysisController = async (
   req: Request,
@@ -76,12 +81,12 @@ export const getMainRecentSummaryController = async (
 /**
  * period 파라미터를 검증하고 HistoryPeriod 타입으로 변환
  */
-const validatePeriod = (value?: string ): HistoryPeriod => {
-  if (value === '7') return 7;
-  if (value === '30') return 30;
+const validatePeriod = (value?: string): HistoryPeriod => {
+  if (value === String(HISTORY_PERIOD.WEEK)) return HISTORY_PERIOD.WEEK;
+  if (value === String(HISTORY_PERIOD.MONTH)) return HISTORY_PERIOD.MONTH;
   if (value === 'all') return 'all';
 
-  return 7;
+  return DEFAULT_PERIOD;
 };
 
 /**
@@ -94,7 +99,10 @@ export const getHistoryAnalysisController = async (
 ) => {
   try {
     // Query Parameter 추출 및 검증
-    const periodParam = typeof req.query.period === 'string' ? req.query.period : '7';
+    const periodParam =
+      typeof req.query.period === 'string'
+        ? req.query.period
+        : String(DEFAULT_PERIOD);
     const period = validatePeriod(periodParam);
 
     // TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
@@ -129,7 +137,10 @@ export const getAccuracyTrendController = async (
 ) => {
   try {
     // Query Parameter 추출 및 검증
-    const periodParam = typeof req.query.period === 'string' ? req.query.period : '7';
+    const periodParam =
+      typeof req.query.period === 'string'
+        ? req.query.period
+        : String(DEFAULT_PERIOD);
     const period = validatePeriod(periodParam);
 
     // TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
@@ -162,8 +173,8 @@ const validateYear = (value: unknown): number => {
 
   // 유효한 연도인지 확인 (2025년 ~ 현재 연도 + 10년)
   const currentYear = new Date().getFullYear();
-  const minYear = 2025;
-  const maxYear = currentYear + 10;
+  const minYear = YEAR_VALIDATION.MIN_YEAR;
+  const maxYear = currentYear + YEAR_VALIDATION.MAX_YEAR_OFFSET;
 
   if (yearNum && !isNaN(yearNum) && yearNum >= minYear && yearNum <= maxYear) {
     return yearNum;

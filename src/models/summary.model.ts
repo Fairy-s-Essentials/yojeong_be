@@ -2,6 +2,7 @@ import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
 import { HistoryPeriod, AccuracyDataPoint, LearningDay } from '../types/history';
+import { HISTORY_PERIOD, SQL_INTERVAL_UNIT } from '../constant/history.const';
 
 /**
  * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
@@ -223,13 +224,11 @@ export const getSummaryCountByPeriod = async (
   period: HistoryPeriod
 ): Promise<number> => {
   try {
-    const DAYS_INTERVAL = 'DAY';
-    
     let dateCondition = '';
-    if (period === 7) {
-      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
-    } else if (period === 30) {
-      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+    if (period === HISTORY_PERIOD.WEEK) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+    } else if (period === HISTORY_PERIOD.MONTH) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
     }
 
     const query = `
@@ -259,13 +258,11 @@ export const getScoreAverageByPeriod = async (
   period: HistoryPeriod
 ): Promise<number> => {
   try {
-    const DAYS_INTERVAL = 'DAY';
-    
     let dateCondition = '';
-    if (period === 7) {
-      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
-    } else if (period === 30) {
-      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+    if (period === HISTORY_PERIOD.WEEK) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+    } else if (period === HISTORY_PERIOD.MONTH) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
     }
 
     const query = `
@@ -298,7 +295,6 @@ export const getAccuracyTrendByPeriod = async (
     let dateGroupBy: string;
     let dateSelect: string;
     let dateCondition = '';
-    const DAYS_INTERVAL = 'DAY';
 
     // period에 따라 GROUP BY와 SELECT 절 결정
     if (period === 'all') {
@@ -311,10 +307,10 @@ export const getAccuracyTrendByPeriod = async (
       dateGroupBy = 'DATE(created_at)';
 
       // 날짜 조건 추가
-      if (period === 7) {
-        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
-      } else if (period === 30) {
-        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+      if (period === HISTORY_PERIOD.WEEK) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+      } else if (period === HISTORY_PERIOD.MONTH) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
       }
     }
 
