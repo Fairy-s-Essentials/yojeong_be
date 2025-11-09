@@ -41,6 +41,36 @@ export interface AccuracyTrendData {
 }
 
 /**
+ * 학습 일자 데이터
+ * @param date - 학습 날짜 (YYYY-MM-DD)
+ * @param count - 해당 날짜 학습 횟수
+ * @param averageScore - 해당 날짜 평균 점수
+ */
+export interface LearningDay {
+  date: string;
+  count: number;
+  averageScore: number;
+}
+
+/**
+ * 학습 연도 목록 데이터
+ * @param years - 학습 기록이 존재하는 연도 배열
+ */
+export interface CalendarYearsData {
+  years: number[];
+}
+
+/**
+ * 연도별 학습 캘린더 데이터
+ * @param year - 조회 연도
+ * @param learningDays - 학습 일자 데이터 배열
+ */
+export interface CalendarData {
+  year: number;
+  learningDays: LearningDay[];
+}
+
+/**
  * 히스토리 분석 응답 타입
  */
 export type HistoryAnalysisResponse = ApiResponse<HistoryAnalysisData>;
@@ -49,3 +79,13 @@ export type HistoryAnalysisResponse = ApiResponse<HistoryAnalysisData>;
  * 정확도 추이 응답 타입
  */
 export type AccuracyTrendResponse = ApiResponse<AccuracyTrendData>;
+
+/**
+ * 학습 연도 목록 응답 타입
+ */
+export type CalendarYearsResponse = ApiResponse<CalendarYearsData>;
+
+/**
+ * 연도별 학습 캘린더 응답 타입
+ */
+export type CalendarResponse = ApiResponse<CalendarData>;

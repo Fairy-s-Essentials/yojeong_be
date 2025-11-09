@@ -1,7 +1,7 @@
 import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
-import { HistoryPeriod, AccuracyDataPoint } from '../types/history';
+import { HistoryPeriod, AccuracyDataPoint, LearningDay } from '../types/history';
 
 /**
  * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
@@ -337,5 +337,66 @@ export const getAccuracyTrendByPeriod = async (
   } catch (error) {
     console.error('정확도 추이 조회 실패:', error);
     throw new Error('정확도 추이 조회 실패');
+  }
+};
+
+/**
+ * 사용자의 학습 기록이 존재하는 연도 목록을 조회하는 함수
+ * @param userId - 사용자 ID
+ * @returns 학습 기록이 있는 연도 배열 (오름차순 정렬)
+ */
+export const getCalendarYears = async (userId: number): Promise<number[]> => {
+  try {
+    const query = `
+      SELECT DISTINCT YEAR(created_at) as year
+      FROM summaries
+      WHERE user_id = ? AND is_deleted = 0
+      ORDER BY year ASC
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    // 연도만 추출하여 배열로 반환
+    return (converted as Array<{ year: number }>).map((row) => row.year);
+  } catch (error) {
+    console.error('학습 연도 목록 조회 실패:', error);
+    throw new Error('학습 연도 목록 조회 실패');
+  }
+};
+
+/**
+ * 특정 연도의 학습 캘린더 데이터를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param year - 조회할 연도
+ * @returns 날짜별 학습 횟수와 평균 점수 배열 (날짜 오름차순)
+ */
+export const getCalendarByYear = async (
+  userId: number,
+  year: number
+): Promise<LearningDay[]> => {
+  try {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count,
+        ROUND(AVG(similarity_score)) as averageScore
+      FROM summaries
+      WHERE user_id = ? 
+        AND is_deleted = 0
+        AND YEAR(created_at) = ?
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    const params = [userId, year];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted || [];
+  } catch (error) {
+    console.error('학습 캘린더 조회 실패:', error);
+    throw new Error('학습 캘린더 조회 실패');
   }
 };

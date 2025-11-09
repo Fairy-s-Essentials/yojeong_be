@@ -6,7 +6,9 @@ import {
   getRecentSummary,
   getSummaryCountByPeriod,
   getScoreAverageByPeriod,
-  getAccuracyTrendByPeriod
+  getAccuracyTrendByPeriod,
+  getCalendarYears,
+  getCalendarByYear
 } from '../models/summary.model';
 import { HistoryPeriod } from '../types/history';
 
@@ -132,6 +134,87 @@ export const getAccuracyTrendController = async (
       data: {
         period,
         dataPoints
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * year 파라미터를 검증하고 숫자로 변환
+ * @param value - Query parameter 값
+ * @returns 유효한 연도 또는 현재 연도
+ */
+const validateYear = (value: unknown): number => {
+  // 숫자 문자열을 숫자로 변환
+  const yearNum = typeof value === 'string' ? parseInt(value, 10) : undefined;
+
+  // 유효한 연도인지 확인 (2025년 ~ 현재 연도 + 10년)
+  const currentYear = new Date().getFullYear();
+  const minYear = 2025;
+  const maxYear = currentYear + 10;
+
+  if (yearNum && !isNaN(yearNum) && yearNum >= minYear && yearNum <= maxYear) {
+    return yearNum;
+  }
+
+  // 기본값: 현재 연도
+  return currentYear;
+};
+
+/**
+ * 학습 기록이 존재하는 연도 목록을 조회하는 컨트롤러
+ */
+export const getCalendarYearsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
+    const userId = 1;
+
+    // Model 함수 호출
+    const years = await getCalendarYears(userId);
+
+    // 응답 반환
+    return res.status(200).json({
+      success: true,
+      data: {
+        years
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 특정 연도의 학습 캘린더를 조회하는 컨트롤러
+ */
+export const getCalendarController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Query Parameter 추출 및 검증
+    const yearParam = req.query.year;
+    const year = validateYear(yearParam);
+
+    // TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
+    const userId = 1;
+
+    // Model 함수 호출
+    const learningDays = await getCalendarByYear(userId, year);
+
+    // 응답 반환
+    return res.status(200).json({
+      success: true,
+      data: {
+        year,
+        learningDays
       }
     });
   } catch (error) {
