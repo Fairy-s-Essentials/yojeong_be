@@ -7,9 +7,10 @@ import {
   insertSummary
 } from '../models/summary.model';
 import { validateSummaryInput } from '../utils/validation.util';
-import { getTestSummary } from '../services/summary.service';
+import { getTestSummary, saveLearningNote } from '../services/summary.service';
 import { CreateSummaryReqBody } from '../types/summary';
 import geminiService from '../services/gemini.service';
+import { sendAuthError } from '../utils/auth.util';
 
 export const getSummaryController = async (
   req: Request,
@@ -36,6 +37,12 @@ export const createSummaryController = async (
 ) => {
   console.log('createSummaryController');
   try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
     const userInput = req.body;
 
     // 사용자 입력값 검증
@@ -52,8 +59,6 @@ export const createSummaryController = async (
       });
     }
 
-    // userId 임시 고정
-    const userId = 1;
     const {
       originalText,
       originalUrl,
@@ -120,7 +125,12 @@ export const getSummaryDetailByIdController = async (
   next: NextFunction
 ) => {
   try {
-    const userId = 1;
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
     const { id } = req.params;
 
     const averageScore = await getScoreAverageByUserId(userId);
@@ -157,6 +167,31 @@ export const getSummaryDetailByIdController = async (
       success: true,
       message: 'Summary 상세 조회 성공',
       data: returnData
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveLearningNoteController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
+    // const { id } = req.params;
+    const { id, learningNote } = req.body;
+    const result = await saveLearningNote(Number(id), learningNote);
+    return res.status(200).json({
+      success: true,
+      message: 'Learning Note 저장 성공',
+      data: result
     });
   } catch (error) {
     next(error);

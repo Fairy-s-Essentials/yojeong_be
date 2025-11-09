@@ -11,6 +11,7 @@ import {
   getCalendarByYear
 } from '../models/summary.model';
 import { HistoryPeriod } from '../types/history';
+import { sendAuthError } from '../utils/auth.util';
 
 export const getMainAnalysisController = async (
   req: Request,
@@ -18,7 +19,12 @@ export const getMainAnalysisController = async (
   next: NextFunction
 ) => {
   try {
-    const userId = 1;
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
     const weeklyCount = await getWeeklySummaryCountByUserId(userId);
     const averageScore = await getScoreAverageByUserId(userId);
     const consecutiveDays = await getContinuousLearningDaysByUserId(userId);
@@ -42,8 +48,12 @@ export const getMainRecentSummaryController = async (
 ) => {
   console.log('getMainRecentSummaryController');
   try {
-    //TODO: userId는 반드시 토큰에서 추출하는것으로 변경한다.
-    const userId = 1;
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
     const summary = await getRecentSummary(userId);
 
     const returnData = summary.map((item: any) => ({
