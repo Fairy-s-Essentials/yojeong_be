@@ -20,7 +20,7 @@ export class AuthController {
       console.error('카카오 로그인 오류:', error);
       res.status(500).json({
         success: false,
-        message: '카카오 로그인 처리 중 오류가 발생했습니다.',
+        message: '카카오 로그인 처리 중 오류가 발생했습니다.'
       });
     }
   }
@@ -38,7 +38,7 @@ export class AuthController {
       if (!code || typeof code !== 'string') {
         res.status(400).json({
           success: false,
-          message: '인가 코드가 없습니다.',
+          message: '인가 코드가 없습니다.'
         });
         return;
       }
@@ -52,7 +52,7 @@ export class AuthController {
         kakao_id: user.kakao_id,
         nickname: user.nickname!,
         email: user.email,
-        profile_image: user.profile_image,
+        profile_image: user.profile_image
       };
 
       req.session.user = sessionUser;
@@ -63,7 +63,9 @@ export class AuthController {
     } catch (error) {
       console.error('카카오 콜백 오류:', error);
       // 로그인 실패 시 프론트엔드로 리다이렉트
-      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=false&error=login_failed`);
+      res.redirect(
+        `${process.env.FRONTEND_URL}/auth/callback?success=false&error=login_failed`
+      );
     }
   }
 
@@ -86,21 +88,21 @@ export class AuthController {
           console.error('세션 삭제 오류:', err);
           res.status(500).json({
             success: false,
-            message: '로그아웃 처리 중 오류가 발생했습니다.',
+            message: '로그아웃 처리 중 오류가 발생했습니다.'
           });
           return;
         }
 
         res.status(200).json({
           success: true,
-          message: '로그아웃 성공',
+          message: '로그아웃 성공'
         });
       });
     } catch (error) {
       console.error('로그아웃 오류:', error);
       res.status(500).json({
         success: false,
-        message: '로그아웃 처리 중 오류가 발생했습니다.',
+        message: '로그아웃 처리 중 오류가 발생했습니다.'
       });
     }
   }
@@ -117,7 +119,7 @@ export class AuthController {
       if (!user) {
         res.status(401).json({
           success: false,
-          message: '로그인이 필요합니다.',
+          message: '로그인이 필요합니다.'
         });
         return;
       }
@@ -131,15 +133,15 @@ export class AuthController {
             kakao_id: user.kakao_id,
             nickname: user.nickname,
             email: user.email,
-            profile_image: user.profile_image,
-          },
-        },
+            profile_image: user.profile_image
+          }
+        }
       });
     } catch (error) {
       console.error('사용자 정보 조회 오류:', error);
       res.status(500).json({
         success: false,
-        message: '사용자 정보 조회 중 오류가 발생했습니다.',
+        message: '사용자 정보 조회 중 오류가 발생했습니다.'
       });
     }
   }
@@ -156,7 +158,7 @@ export class AuthController {
       if (!user || !accessToken) {
         res.status(401).json({
           success: false,
-          message: '로그인이 필요합니다.',
+          message: '로그인이 필요합니다.'
         });
         return;
       }
@@ -164,25 +166,24 @@ export class AuthController {
       // 회원 탈퇴 처리
       await AuthService.unlink(accessToken, user.kakao_id);
 
-      req.session.destroy((err) => {  
-        if (err) {  
-          console.error('세션 삭제 오류:', err);  
-          return res.status(500).json({  
-            success: false,  
-            message: '회원 탈퇴 처리 중 세션 삭제에 실패했습니다.',  
-          });  
-        }  
-        res.status(200).json({  
-          success: true,  
-          message: '회원 탈퇴가 완료되었습니다.',  
-        });  
-      }); 
-      
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('세션 삭제 오류:', err);
+          return res.status(500).json({
+            success: false,
+            message: '회원 탈퇴 처리 중 세션 삭제에 실패했습니다.'
+          });
+        }
+        res.status(200).json({
+          success: true,
+          message: '회원 탈퇴가 완료되었습니다.'
+        });
+      });
     } catch (error) {
       console.error('회원 탈퇴 오류:', error);
       res.status(500).json({
         success: false,
-        message: '회원 탈퇴 처리 중 오류가 발생했습니다.',
+        message: '회원 탈퇴 처리 중 오류가 발생했습니다.'
       });
     }
   }
