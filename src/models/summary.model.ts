@@ -1,6 +1,7 @@
 import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
+import { HistoryPeriod } from '../types/history';
 
 /**
  * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
@@ -209,4 +210,76 @@ export const getSummaryDetailById = async (id: number) => {
   const result: any = await pool.query(query, params);
   console.log(result);
   return convertBigIntToNumber(result[0]);
+};
+
+/**
+ * 기간별 요약 개수를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 해당 기간의 요약 개수
+ */
+export const getSummaryCountByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<number> => {
+  try {
+    const DAYS_INTERVAL = 'DAY';
+    
+    let dateCondition = '';
+    if (period === 7) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
+    } else if (period === 30) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+    }
+
+    const query = `
+      SELECT COUNT(*) as count 
+      FROM summaries 
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return converted[0]?.count || 0;
+  } catch (error) {
+    console.error('기간별 요약 개수 조회 실패:', error);
+    throw new Error('기간별 요약 개수 조회 실패');
+  }
+};
+
+/**
+ * 기간별 평균 정확도를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 해당 기간의 평균 점수 (0~100)
+ */
+export const getScoreAverageByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<number> => {
+  try {
+    const DAYS_INTERVAL = 'DAY';
+    
+    let dateCondition = '';
+    if (period === 7) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 7 ${DAYS_INTERVAL})`;
+    } else if (period === 30) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL 30 ${DAYS_INTERVAL})`;
+    }
+
+    const query = `
+      SELECT AVG(similarity_score) as avg 
+      FROM summaries 
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return Math.round(converted[0]?.avg || 0);
+  } catch (error) {
+    console.error('기간별 평균 정확도 조회 실패:', error);
+    throw new Error('기간별 평균 정확도 조회 실패');
+  }
 };
