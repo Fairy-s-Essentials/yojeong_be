@@ -9,3 +9,14 @@ export async function getTestSummary() {
     throw error;
   }
 }
+
+export async function saveLearningNote(id: number, learningNote: string) {
+  const query = `
+  UPDATE summaries
+  SET learning_note = ?
+  WHERE id = ?
+  `;
+  const params = [learningNote, id];
+  const result = await pool.query(query, params);
+  return result[0];
+}

@@ -7,7 +7,7 @@ import {
   insertSummary
 } from '../models/summary.model';
 import { validateSummaryInput } from '../utils/validation.util';
-import { getTestSummary } from '../services/summary.service';
+import { getTestSummary, saveLearningNote } from '../services/summary.service';
 import { CreateSummaryReqBody } from '../types/summary';
 import geminiService from '../services/gemini.service';
 
@@ -157,6 +157,26 @@ export const getSummaryDetailByIdController = async (
       success: true,
       message: 'Summary 상세 조회 성공',
       data: returnData
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveLearningNoteController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = 1;
+    // const { id } = req.params;
+    const { id, learningNote } = req.body;
+    const result = await saveLearningNote(Number(id), learningNote);
+    return res.status(200).json({
+      success: true,
+      message: 'Learning Note 저장 성공',
+      data: result
     });
   } catch (error) {
     next(error);
