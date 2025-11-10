@@ -1,6 +1,8 @@
 import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
+import { HistoryPeriod, AccuracyDataPoint, LearningDay } from '../types/history';
+import { HISTORY_PERIOD, SQL_INTERVAL_UNIT } from '../constant/history.const';
 
 /**
  * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
@@ -209,4 +211,188 @@ export const getSummaryDetailById = async (id: number) => {
   const result: any = await pool.query(query, params);
   console.log(result);
   return convertBigIntToNumber(result[0]);
+};
+
+/**
+ * 기간별 요약 개수를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 해당 기간의 요약 개수
+ */
+export const getSummaryCountByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<number> => {
+  try {
+    let dateCondition = '';
+    if (period === HISTORY_PERIOD.WEEK) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+    } else if (period === HISTORY_PERIOD.MONTH) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
+    }
+
+    const query = `
+      SELECT COUNT(*) as count 
+      FROM summaries 
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return converted[0]?.count || 0;
+  } catch (error) {
+    console.error('기간별 요약 개수 조회 실패:', error);
+    throw new Error('기간별 요약 개수 조회 실패');
+  }
+};
+
+/**
+ * 기간별 평균 정확도를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 해당 기간의 평균 점수 (0~100)
+ */
+export const getScoreAverageByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<number> => {
+  try {
+    let dateCondition = '';
+    if (period === HISTORY_PERIOD.WEEK) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+    } else if (period === HISTORY_PERIOD.MONTH) {
+      dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
+    }
+
+    const query = `
+      SELECT AVG(similarity_score) as avg 
+      FROM summaries 
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+    return Math.round(converted[0]?.avg || 0);
+  } catch (error) {
+    console.error('기간별 평균 정확도 조회 실패:', error);
+    throw new Error('기간별 평균 정확도 조회 실패');
+  }
+};
+
+/**
+ * 기간별 정확도 추이를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param period - 조회 기간 (7, 30, "all")
+ * @returns 날짜/월별 평균 점수와 학습 횟수 배열 (오래된 순 정렬)
+ */
+export const getAccuracyTrendByPeriod = async (
+  userId: number,
+  period: HistoryPeriod
+): Promise<AccuracyDataPoint[]> => {
+  try {
+    let dateGroupBy: string;
+    let dateSelect: string;
+    let dateCondition = '';
+
+    // period에 따라 GROUP BY와 SELECT 절 결정
+    if (period === 'all') {
+      // 전체 기간: 월별 집계 (YYYY-MM)
+      dateSelect = "DATE_FORMAT(created_at, '%Y-%m')";
+      dateGroupBy = "DATE_FORMAT(created_at, '%Y-%m')";
+    } else {
+      // 7일/30일: 일별 집계 (YYYY-MM-DD)
+      dateSelect = 'DATE(created_at)';
+      dateGroupBy = 'DATE(created_at)';
+
+      // 날짜 조건 추가
+      if (period === HISTORY_PERIOD.WEEK) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.WEEK} ${SQL_INTERVAL_UNIT.DAY})`;
+      } else if (period === HISTORY_PERIOD.MONTH) {
+        dateCondition = `AND created_at >= DATE_SUB(NOW(), INTERVAL ${HISTORY_PERIOD.MONTH} ${SQL_INTERVAL_UNIT.DAY})`;
+      }
+    }
+
+    const query = `
+      SELECT 
+        ${dateSelect} as date,
+        ROUND(AVG(similarity_score)) as averageScore,
+        COUNT(*) as count
+      FROM summaries
+      WHERE user_id = ? AND is_deleted = 0 ${dateCondition}
+      GROUP BY ${dateGroupBy}
+      ORDER BY date ASC
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted || [];
+  } catch (error) {
+    console.error('정확도 추이 조회 실패:', error);
+    throw new Error('정확도 추이 조회 실패');
+  }
+};
+
+/**
+ * 사용자의 학습 기록이 존재하는 연도 목록을 조회하는 함수
+ * @param userId - 사용자 ID
+ * @returns 학습 기록이 있는 연도 배열 (오름차순 정렬)
+ */
+export const getCalendarYears = async (userId: number): Promise<number[]> => {
+  try {
+    const query = `
+      SELECT DISTINCT YEAR(created_at) as year
+      FROM summaries
+      WHERE user_id = ? AND is_deleted = 0
+      ORDER BY year ASC
+    `;
+
+    const params = [userId];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    // 연도만 추출하여 배열로 반환
+    return (converted as Array<{ year: number }>).map((row) => row.year);
+  } catch (error) {
+    console.error('학습 연도 목록 조회 실패:', error);
+    throw new Error('학습 연도 목록 조회 실패');
+  }
+};
+
+/**
+ * 특정 연도의 학습 캘린더 데이터를 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param year - 조회할 연도
+ * @returns 날짜별 학습 횟수와 평균 점수 배열 (날짜 오름차순)
+ */
+export const getCalendarByYear = async (
+  userId: number,
+  year: number
+): Promise<LearningDay[]> => {
+  try {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count,
+        ROUND(AVG(similarity_score)) as averageScore
+      FROM summaries
+      WHERE user_id = ? 
+        AND is_deleted = 0
+        AND YEAR(created_at) = ?
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    const params = [userId, year];
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted || [];
+  } catch (error) {
+    console.error('학습 캘린더 조회 실패:', error);
+    throw new Error('학습 캘린더 조회 실패');
+  }
 };
