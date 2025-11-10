@@ -8,6 +8,9 @@ import RootRouter from './routes/router';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Nginx 프록시 신뢰 설정 (X-Forwarded-Proto 헤더 인식)
+app.set('trust proxy', 1);
+
 app.use(
   cors({
     origin: `${process.env.FRONTEND_URL}`,
