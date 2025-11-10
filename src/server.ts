@@ -1,9 +1,9 @@
-import express from "express";
-import type { Request, Response } from "express";
-import session from "express-session";
-import cors from "cors";
-import { pool } from "./config/db";
-import RootRouter from "./routes/router";
+import express from 'express';
+import type { Request, Response } from 'express';
+import session from 'express-session';
+import cors from 'cors';
+import { pool } from './config/db';
+import RootRouter from './routes/router';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(
   cors({
     origin: `${process.env.FRONTEND_URL}`,
-    credentials: true, 
+    credentials: true
   })
 );
 
@@ -22,10 +22,13 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // production에서는 HTTPS 필수
+      secure: process.env.NODE_ENV === 'production', // production에서는 HTTPS 필수
       httpOnly: true, // XSS 공격 방지
       maxAge: 1000 * 60 * 60 * 24, // 1일
-    },
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain:
+        process.env.NODE_ENV === 'production' ? '.yojeong.ai.kr' : undefined
+    }
   })
 );
 
