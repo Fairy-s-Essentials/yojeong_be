@@ -1,11 +1,16 @@
 import { GoogleGenAI } from '@google/genai';
-import { getPrompt } from '../utils/prompt.util';
+import {
+  getAiSummaryPrompt,
+  getPrompt,
+  getSummaryEvaluationPrompt
+} from '../utils/prompt.util';
 import { getAiSummaryNumOfCharacterByOriginalText } from '../utils/summary.util';
 import { GeminiGenerateContentProps } from '../types/gemini';
 
 class GeminiService {
   private readonly genAI: GoogleGenAI;
   private readonly model: string = 'gemini-2.5-flash-lite';
+  // private readonly model: string = 'gemini-2.5-pro';
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -20,38 +25,82 @@ class GeminiService {
    * @param prompt - 입력 텍스트
    * @returns AI 생성 텍스트 응답
    */
-  async generateContent(userInput: GeminiGenerateContentProps) {
-    const numOfCharacter = getAiSummaryNumOfCharacterByOriginalText(
-      userInput.originalText
-    );
-    const prompt = getPrompt({ ...userInput, numOfCharacter });
+  // async generateContent(userInput: GeminiGenerateContentProps) {
+  //   const numOfCharacter = getAiSummaryNumOfCharacterByOriginalText(
+  //     userInput.originalText
+  //   );
+  //   const prompt = getPrompt({ ...userInput, numOfCharacter });
 
-    try {
-      const response = await this.genAI.models.generateContent({
-        model: this.model,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseJsonSchema: {
-            aiSummary: 'string',
-            similarityScore: 'number',
-            aiWellUnderstood: 'string[]',
-            aiMissedPoints: 'string[]',
-            aiImprovements: 'string[]'
-          }
+  //   try {
+  //     const response = await this.genAI.models.generateContent({
+  //       model: this.model,
+  //       contents: prompt,
+  //       config: {
+  //         responseMimeType: 'application/json',
+  //         responseJsonSchema: {
+  //           aiSummary: 'string',
+  //           similarityScore: 'number',
+  //           aiWellUnderstood: 'string[]',
+  //           aiMissedPoints: 'string[]',
+  //           aiImprovements: 'string[]'
+  //         }
+  //       }
+  //     });
+
+  //     const parsedResponse = JSON.parse(response?.text || '{}');
+  //     console.log('parsedResponse', parsedResponse);
+  //     return parsedResponse;
+  //   } catch (error) {
+  //     console.error('Gemini API 호출 중 오류 발생:', error);
+  //     if (error instanceof Error) {
+  //       throw new Error(error.message);
+  //     }
+  //     throw new Error('AI 응답 생성에 실패했습니다.');
+  //   }
+  // }
+  async aiSummary(originalText: string) {
+    const numOfCharacter =
+      getAiSummaryNumOfCharacterByOriginalText(originalText);
+    const prompt = getAiSummaryPrompt(originalText, numOfCharacter);
+    const response = await this.genAI.models.generateContent({
+      model: this.model,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseJsonSchema: {
+          aiSummary: 'string'
         }
-      });
-
-      const parsedResponse = JSON.parse(response?.text || '{}');
-
-      return parsedResponse;
-    } catch (error) {
-      console.error('Gemini API 호출 중 오류 발생:', error);
-      if (error instanceof Error) {
-        throw new Error(error.message);
       }
-      throw new Error('AI 응답 생성에 실패했습니다.');
-    }
+    });
+    const parsedResponse = JSON.parse(response?.text || '{}');
+    return parsedResponse;
+  }
+
+  async summaryEvaluation(
+    originalText: string,
+    userSummary: string,
+    aiSummary: string
+  ) {
+    const prompt = getSummaryEvaluationPrompt(
+      originalText,
+      userSummary,
+      aiSummary
+    );
+    const response = await this.genAI.models.generateContent({
+      model: this.model,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseJsonSchema: {
+          similarityScore: 'number',
+          aiWellUnderstood: 'string[]',
+          aiMissedPoints: 'string[]',
+          aiImprovements: 'string[]'
+        }
+      }
+    });
+    const parsedResponse = JSON.parse(response?.text || '{}');
+    return parsedResponse;
   }
 }
 

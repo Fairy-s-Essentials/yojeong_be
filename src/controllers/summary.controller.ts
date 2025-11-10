@@ -38,6 +38,7 @@ export const createSummaryController = async (
   console.log('createSummaryController');
   try {
     const { user } = req.session;
+    console.log('user in createSummaryController', user);
     if (!user) {
       sendAuthError(res);
       return;
@@ -79,13 +80,34 @@ export const createSummaryController = async (
     //   criticalOpposite
     // });
 
-    const aiSummaryResponse = await geminiService.generateContent({
+    // const aiSummaryResponse = await geminiService.generateContent({
+    //   originalText,
+    //   userSummary,
+    //   criticalWeakness,
+    //   criticalOpposite
+    // });
+    console.log('--------------------------------');
+    const aiSummaryResponse = await geminiService.aiSummary(originalText);
+    console.log('aiSummaryResponse', aiSummaryResponse);
+    const summaryEvaluationResponse = await geminiService.summaryEvaluation(
       originalText,
       userSummary,
-      criticalWeakness,
-      criticalOpposite
-    });
-
+      aiSummaryResponse.aiSummary
+    );
+    console.log('--------------------------------');
+    console.log('--------------------------------');
+    console.log('summaryEvaluationResponse', summaryEvaluationResponse);
+    console.log('--------------------------------');
+    // const resultId = await insertSummary({
+    //   userId,
+    //   originalText,
+    //   originalUrl,
+    //   difficultyLevel,
+    //   userSummary,
+    //   criticalWeakness,
+    //   criticalOpposite,
+    //   ...aiSummaryResponse
+    // });
     const resultId = await insertSummary({
       userId,
       originalText,
@@ -94,7 +116,8 @@ export const createSummaryController = async (
       userSummary,
       criticalWeakness,
       criticalOpposite,
-      ...aiSummaryResponse
+      aiSummary: aiSummaryResponse.aiSummary,
+      ...summaryEvaluationResponse
     });
 
     // 성공 응답
