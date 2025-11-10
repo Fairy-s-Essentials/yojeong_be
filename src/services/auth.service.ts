@@ -17,7 +17,9 @@ export class AuthService {
    * @param code - 카카오에서 받은 인가 코드
    * @returns 사용자 정보와 액세스 토큰
    */
-  static async kakaoLogin(code: string): Promise<{ user: User; accessToken: string }> {
+  static async kakaoLogin(
+    code: string
+  ): Promise<{ user: User; accessToken: string }> {
     try {
       // 1. 인가 코드로 액세스 토큰 받기
       const tokenData = await KakaoService.getToken(code);
@@ -39,30 +41,28 @@ export class AuthService {
           '카카오 사용자',
         profile_image:
           kakaoUser.kakao_account?.profile?.profile_image_url ||
-          kakaoUser.properties?.profile_image,
+          kakaoUser.properties?.profile_image
       };
 
       // 5. 신규 사용자면 회원가입, 기존 사용자면 정보 업데이트
       if (!user) {
         // 신규 사용자 - 회원가입
-        console.log('신규 사용자 회원가입:', userData.kakao_id);
         user = await UserModel.create(userData);
       } else {
         // 기존 사용자 - 정보 업데이트 (프로필 변경 반영)
-        console.log('기존 사용자 정보 업데이트:', userData.kakao_id);
         await UserModel.update(kakaoUser.id, userData);
 
         // 업데이트된 정보로 user 객체 갱신
         user = {
           ...user,
-          ...userData,
+          ...userData
         };
       }
 
       // 6. 사용자 정보와 액세스 토큰 반환
       return { user, accessToken: access_token };
     } catch (error) {
-      console.error('카카오 로그인 처리 오류:', error);
+      console.error('[인증 서비스] 카카오 로그인 처리 오류:', error);
       throw new Error('카카오 로그인 처리 중 오류가 발생했습니다.');
     }
   }
@@ -78,7 +78,7 @@ export class AuthService {
     try {
       await KakaoService.logout(accessToken);
     } catch (error) {
-      console.error('로그아웃 처리 오류:', error);
+      console.error('[인증 서비스] 로그아웃 처리 오류:', error);
       // 로그아웃은 실패해도 세션은 삭제되므로 에러를 던지지 않음
       // 카카오 토큰 무효화 실패해도 우리 서비스에서는 로그아웃 처리
     }
@@ -99,9 +99,8 @@ export class AuthService {
 
       // TODO: DB에서 소프트 삭제 구현 필요
       // UserModel.softDelete(kakaoId) 같은 함수 추가
-      console.log('회원 탈퇴 처리 필요:', kakaoId);
     } catch (error) {
-      console.error('회원 탈퇴 처리 오류:', error);
+      console.error('[인증 서비스] 회원 탈퇴 처리 오류:', error);
       throw new Error('회원 탈퇴 처리 중 오류가 발생했습니다.');
     }
   }

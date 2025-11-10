@@ -15,5 +15,5 @@ export const kakaoConfig = {
   redirectUri: process.env.KAKAO_REDIRECT_URI,
   clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
   authUrl: 'https://kauth.kakao.com',
-  apiUrl: 'https://kapi.kakao.com',
+  apiUrl: 'https://kapi.kakao.com'
 };

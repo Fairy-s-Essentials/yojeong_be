@@ -14,7 +14,7 @@ export class KakaoService {
     const params = {
       client_id: kakaoConfig.restApiKey, // REST API 키
       redirect_uri: kakaoConfig.redirectUri, // 로그인 후 돌아올 주소
-      response_type: 'code', // 응답 타입 (고정값)
+      response_type: 'code' // 응답 타입 (고정값)
     };
 
     // URL 생성: https://kauth.kakao.com/oauth/authorize?client_id=...&redirect_uri=...
@@ -34,7 +34,7 @@ export class KakaoService {
         client_id: kakaoConfig.restApiKey, // REST API 키
         redirect_uri: kakaoConfig.redirectUri, // 리다이렉트 URI (등록한 것과 동일해야 함)
         code, // 인가 코드
-        client_secret: kakaoConfig.clientSecret, // 클라이언트 시크릿 (선택)
+        client_secret: kakaoConfig.clientSecret // 클라이언트 시크릿 (선택)
       };
 
       // POST 요청으로 토큰 받기
@@ -43,14 +43,14 @@ export class KakaoService {
         qs.stringify(params), // URL 인코딩 형식으로 전송
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded', // 필수 헤더
-          },
+            'Content-Type': 'application/x-www-form-urlencoded' // 필수 헤더
+          }
         }
       );
 
       return response.data;
     } catch (error) {
-      console.error('카카오 토큰 발급 오류:', error);
+      console.error('[카카오 서비스] 토큰 발급 오류:', error);
       throw new Error(`카카오 토큰 발급에 실패했습니다. ${error}`);
     }
   }
@@ -68,14 +68,14 @@ export class KakaoService {
         {
           headers: {
             Authorization: `Bearer ${accessToken}`, // 액세스 토큰을 헤더에 포함
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-          },
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+          }
         }
       );
 
       return response.data;
     } catch (error) {
-      console.error('카카오 사용자 정보 조회 오류:', error);
+      console.error('[카카오 서비스] 사용자 정보 조회 오류:', error);
       throw new Error('카카오 사용자 정보 조회에 실패했습니다.');
     }
   }
@@ -92,12 +92,12 @@ export class KakaoService {
         {}, // body는 빈 객체
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
     } catch (error) {
-      console.error('카카오 로그아웃 오류:', error);
+      console.error('[카카오 서비스] 로그아웃 오류:', error);
       throw new Error('카카오 로그아웃에 실패했습니다.');
     }
   }
@@ -114,12 +114,12 @@ export class KakaoService {
         {},
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+            Authorization: `Bearer ${accessToken}`
+          }
         }
       );
     } catch (error) {
-      console.error('카카오 연결 해제 오류:', error);
+      console.error('[카카오 서비스] 연결 해제 오류:', error);
       throw new Error('카카오 연결 해제에 실패했습니다.');
     }
   }

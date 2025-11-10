@@ -17,7 +17,7 @@ export class AuthController {
       // 사용자를 카카오 로그인 페이지로 리다이렉트
       res.redirect(kakaoAuthUrl);
     } catch (error) {
-      console.error('카카오 로그인 오류:', error);
+      console.error('[인증 컨트롤러] 카카오 로그인 오류:', error);
       res.status(500).json({
         success: false,
         message: '카카오 로그인 처리 중 오류가 발생했습니다.'
@@ -55,14 +55,36 @@ export class AuthController {
         profile_image: user.profile_image
       };
 
-      req.session.user = sessionUser;
-      req.session.accessToken = accessToken;
+      // 세션 재생성으로 새로운 세션 ID 생성 (Set-Cookie 발송)
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('[인증 컨트롤러] 세션 재생성 오류:', err);
+          return res.redirect(
+            `${process.env.FRONTEND_URL}/auth/callback?success=false&error=session_failed`
+          );
+        }
 
-      // 프론트엔드 콜백 페이지로 리다이렉트
-      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?success=true`);
+        // 새 세션에 데이터 저장
+        req.session.user = sessionUser;
+        req.session.accessToken = accessToken;
+
+        // 명시적으로 저장
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('[인증 컨트롤러] 세션 저장 오류:', saveErr);
+            return res.redirect(
+              `${process.env.FRONTEND_URL}/auth/callback?success=false&error=session_save_failed`
+            );
+          }
+
+          // 프론트엔드 콜백 페이지로 리다이렉트
+          res.redirect(
+            `${process.env.FRONTEND_URL}/auth/callback?success=true`
+          );
+        });
+      });
     } catch (error) {
-      console.error('카카오 콜백 오류:', error);
-      // 로그인 실패 시 프론트엔드로 리다이렉트
+      console.error('[인증 컨트롤러] 카카오 콜백 오류:', error);
       res.redirect(
         `${process.env.FRONTEND_URL}/auth/callback?success=false&error=login_failed`
       );
@@ -85,7 +107,7 @@ export class AuthController {
       // 세션 삭제
       req.session.destroy((err) => {
         if (err) {
-          console.error('세션 삭제 오류:', err);
+          console.error('[인증 컨트롤러] 세션 삭제 오류:', err);
           res.status(500).json({
             success: false,
             message: '로그아웃 처리 중 오류가 발생했습니다.'
@@ -99,7 +121,7 @@ export class AuthController {
         });
       });
     } catch (error) {
-      console.error('로그아웃 오류:', error);
+      console.error('[인증 컨트롤러] 로그아웃 오류:', error);
       res.status(500).json({
         success: false,
         message: '로그아웃 처리 중 오류가 발생했습니다.'
@@ -138,7 +160,7 @@ export class AuthController {
         }
       });
     } catch (error) {
-      console.error('사용자 정보 조회 오류:', error);
+      console.error('[인증 컨트롤러] 사용자 정보 조회 오류:', error);
       res.status(500).json({
         success: false,
         message: '사용자 정보 조회 중 오류가 발생했습니다.'
@@ -168,7 +190,7 @@ export class AuthController {
 
       req.session.destroy((err) => {
         if (err) {
-          console.error('세션 삭제 오류:', err);
+          console.error('[인증 컨트롤러] 세션 삭제 오류:', err);
           return res.status(500).json({
             success: false,
             message: '회원 탈퇴 처리 중 세션 삭제에 실패했습니다.'
@@ -180,7 +202,7 @@ export class AuthController {
         });
       });
     } catch (error) {
-      console.error('회원 탈퇴 오류:', error);
+      console.error('[인증 컨트롤러] 회원 탈퇴 오류:', error);
       res.status(500).json({
         success: false,
         message: '회원 탈퇴 처리 중 오류가 발생했습니다.'
