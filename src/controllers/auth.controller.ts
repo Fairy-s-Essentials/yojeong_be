@@ -88,13 +88,7 @@ export class AuthController {
 
         console.log('[인증 컨트롤러] 세션 저장 완료, 리다이렉트 시작');
         console.log('[디버그] 저장 후 세션 ID:', req.sessionID);
-
-        // 응답 전송 직전에 헤더 확인
-        const originalRedirect = res.redirect.bind(res);
-        res.redirect = function (url) {
-          console.log('[디버그] 리다이렉트 직전 응답 헤더:', res.getHeaders());
-          return originalRedirect(url);
-        };
+        console.log('[디버그] 리다이렉트 직전 응답 헤더:', res.getHeaders());
 
         // 프론트엔드 콜백 페이지로 리다이렉트
         const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?success=true`;
