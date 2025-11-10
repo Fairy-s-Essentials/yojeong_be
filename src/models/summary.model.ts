@@ -396,3 +396,101 @@ export const getCalendarByYear = async (
     throw new Error('학습 캘린더 조회 실패');
   }
 };
+
+/**
+ * 요약 목록을 페이지네이션과 함께 조회하는 함수
+ * @param userId - 사용자 ID
+ * @param page - 페이지 번호 (1부터 시작)
+ * @param limit - 페이지당 항목 수
+ * @param isLatest - true: 최신순, false: 오래된 순
+ * @param search - 검색어 (선택)
+ * @returns 요약 목록 배열
+ */
+export const getSummariesWithPagination = async (
+  userId: number,
+  page: number,
+  limit: number,
+  isLatest: boolean,
+  search?: string
+) => {
+  try {
+    let searchCondition = '';
+    const params: (number | string)[] = [userId];
+
+    if (search && search.trim()) {
+      // Full-Text Search 사용
+      searchCondition = `
+        AND MATCH(original_text, user_summary) 
+        AGAINST(? IN BOOLEAN MODE)
+      `;
+      params.push(search.trim());
+    }
+
+    const orderBy = isLatest ? 'DESC' : 'ASC';
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT 
+        id,
+        user_summary,
+        similarity_score,
+        created_at
+      FROM summaries
+      WHERE user_id = ? 
+        AND is_deleted = 0
+        ${searchCondition}
+      ORDER BY created_at ${orderBy}
+      LIMIT ? OFFSET ?
+    `;
+
+    params.push(limit, offset);
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted || [];
+  } catch (error) {
+    console.error('요약 목록 조회 실패:', error);
+    throw new Error('요약 목록 조회 실패');
+  }
+};
+
+/**
+ * 전체 요약 개수를 조회하는 함수 (검색 조건 포함)
+ * @param userId - 사용자 ID
+ * @param search - 검색어 (선택)
+ * @returns 전체 요약 개수
+ */
+export const getTotalSummariesCount = async (
+  userId: number,
+  search?: string
+): Promise<number> => {
+  try {
+    let searchCondition = '';
+    const params: (number | string)[] = [userId];
+
+    if (search && search.trim()) {
+      // Full-Text Search 사용
+      searchCondition = `
+        AND MATCH(original_text, user_summary) 
+        AGAINST(? IN BOOLEAN MODE)
+      `;
+      params.push(search.trim());
+    }
+
+    const query = `
+      SELECT COUNT(*) as count
+      FROM summaries
+      WHERE user_id = ? 
+        AND is_deleted = 0
+        ${searchCondition}
+    `;
+
+    const result: unknown = await pool.query(query, params);
+    const converted = convertBigIntToNumber(result);
+
+    return converted[0]?.count || 0;
+  } catch (error) {
+    console.error('전체 요약 개수 조회 실패:', error);
+    throw new Error('전체 요약 개수 조회 실패');
+  }
+};
