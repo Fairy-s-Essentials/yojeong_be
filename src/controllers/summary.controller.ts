@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 
 import {
-  getRecentSummary,
   getScoreAverageByUserId,
   getSummaryDetailById,
-  insertSummary
+  insertSummary,
+  getSummariesWithPagination,
+  getTotalSummariesCount
 } from '../models/summary.model';
 import { validateSummaryInput } from '../utils/validation.util';
 import { getTestSummary, saveLearningNote } from '../services/summary.service';
-import { CreateSummaryReqBody } from '../types/summary';
+import {
+  CreateSummaryReqBody,
+  GetSummariesQueryParams,
+  SummaryListItem,
+  PaginationInfo
+} from '../types/summary';
 import geminiService from '../services/gemini.service';
 import { sendAuthError } from '../utils/auth.util';
 
@@ -217,6 +223,91 @@ export const saveLearningNoteController = async (
       data: result
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 요약 목록 조회 컨트롤러 (페이지네이션, 검색, 정렬)
+ */
+export const getSummariesController = async (
+  req: Request<object, object, object, GetSummariesQueryParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+    const userId = user.id;
+
+    // 쿼리 파라미터 파싱 및 기본값 설정
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '5', 10)));
+    const isLatest = req.query.isLatest !== 'false'; // 기본값 true
+    const search = req.query.search?.trim() || undefined;
+
+    // 전체 개수 조회
+    const totalItems = await getTotalSummariesCount(userId, search);
+
+    // 페이지네이션 계산
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    // 데이터 조회
+    const summaries = await getSummariesWithPagination(
+      userId,
+      page,
+      limit,
+      isLatest,
+      search
+    );
+
+    // 응답 데이터 포맷팅
+    const items: SummaryListItem[] = summaries.map(
+      (summary: {
+        id: number;
+        user_summary: string;
+        similarity_score: number;
+        created_at: string;
+      }) => {
+        // userSummary를 100자로 제한
+        const fullSummary = summary.user_summary || '';
+        const truncatedSummary =
+          fullSummary.length > 100
+            ? fullSummary.substring(0, 100) + '...'
+            : fullSummary;
+
+        return {
+          id: summary.id,
+          userSummary: truncatedSummary,
+          similarityScore: summary.similarity_score,
+          createdAt: summary.created_at
+        };
+      }
+    );
+
+    const pagination: PaginationInfo = {
+      currentPage: page,
+      totalPages,
+      totalItems,
+      itemsPerPage: limit,
+      hasNext,
+      hasPrev
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        items,
+        pagination
+      }
+    });
+  } catch (error) {
+    console.error('요약 목록 조회 실패:', error);
     next(error);
   }
 };
