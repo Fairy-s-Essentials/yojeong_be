@@ -418,12 +418,29 @@ export const getSummariesWithPagination = async (
     const params: (number | string)[] = [userId];
 
     if (search && search.trim()) {
-      // Full-Text Search 사용
-      searchCondition = `
-        AND MATCH(original_text, user_summary) 
-        AGAINST(? IN BOOLEAN MODE)
-      `;
-      params.push(search.trim());
+      const searchTerm = search.trim();
+      
+      // 검색어 길이에 따라 Full-Text Search 또는 LIKE 사용
+      // Full-Text의 ft_min_word_len이 4인 경우를 고려
+      if (searchTerm.length >= 4) {
+        // 4글자 이상: Full-Text Search 시도
+        searchCondition = `
+          AND (
+            MATCH(original_text, user_summary) AGAINST(? IN BOOLEAN MODE)
+            OR original_text LIKE ?
+            OR user_summary LIKE ?
+          )
+        `;
+        const likePattern = `%${searchTerm}%`;
+        params.push(searchTerm, likePattern, likePattern);
+      } else {
+        // 4글자 미만: LIKE 검색만 사용
+        searchCondition = `
+          AND (original_text LIKE ? OR user_summary LIKE ?)
+        `;
+        const likePattern = `%${searchTerm}%`;
+        params.push(likePattern, likePattern);
+      }
     }
 
     const orderBy = isLatest ? 'DESC' : 'ASC';
@@ -469,12 +486,28 @@ export const getTotalSummariesCount = async (
     const params: (number | string)[] = [userId];
 
     if (search && search.trim()) {
-      // Full-Text Search 사용
-      searchCondition = `
-        AND MATCH(original_text, user_summary) 
-        AGAINST(? IN BOOLEAN MODE)
-      `;
-      params.push(search.trim());
+      const searchTerm = search.trim();
+      
+      // 검색어 길이에 따라 Full-Text Search 또는 LIKE 사용
+      if (searchTerm.length >= 4) {
+        // 4글자 이상: Full-Text Search 시도
+        searchCondition = `
+          AND (
+            MATCH(original_text, user_summary) AGAINST(? IN BOOLEAN MODE)
+            OR original_text LIKE ?
+            OR user_summary LIKE ?
+          )
+        `;
+        const likePattern = `%${searchTerm}%`;
+        params.push(searchTerm, likePattern, likePattern);
+      } else {
+        // 4글자 미만: LIKE 검색만 사용
+        searchCondition = `
+          AND (original_text LIKE ? OR user_summary LIKE ?)
+        `;
+        const likePattern = `%${searchTerm}%`;
+        params.push(likePattern, likePattern);
+      }
     }
 
     const query = `

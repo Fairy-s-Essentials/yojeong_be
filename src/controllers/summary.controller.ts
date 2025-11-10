@@ -244,8 +244,8 @@ export const getSummariesController = async (
     const userId = user.id;
 
     // 쿼리 파라미터 파싱 및 기본값 설정
-    const page = Math.max(1, parseInt(req.query.page || '1', 10));
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '5', 10)));
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 5));
     const isLatest = req.query.isLatest !== 'false'; // 기본값 true
     const search = req.query.search?.trim() || undefined;
 
