@@ -74,12 +74,22 @@ export class AuthController {
 
       req.session.user = sessionUser;
       req.session.accessToken = accessToken;
-      console.log('[인증 컨트롤러] 세션에 사용자 정보 저장 완료');
+      console.log('[인증 컨트롤러] 세션에 사용자 정보 저장 시작');
 
-      // 프론트엔드 콜백 페이지로 리다이렉트
-      const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?success=true`;
-      console.log('[인증 컨트롤러] 프론트엔드로 리다이렉트:', redirectUrl);
-      res.redirect(redirectUrl);
+      // 세션 저장을 명시적으로 기다림
+      req.session.save((err) => {
+        if (err) {
+          console.error('[인증 컨트롤러] 세션 저장 오류:', err);
+          const errorUrl = `${process.env.FRONTEND_URL}/auth/callback?success=false&error=session_save_failed`;
+          return res.redirect(errorUrl);
+        }
+
+        console.log('[인증 컨트롤러] 세션 저장 완료, 리다이렉트 시작');
+        // 프론트엔드 콜백 페이지로 리다이렉트
+        const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?success=true`;
+        console.log('[인증 컨트롤러] 프론트엔드로 리다이렉트:', redirectUrl);
+        res.redirect(redirectUrl);
+      });
     } catch (error) {
       console.error('[인증 컨트롤러] 카카오 콜백 오류:', error);
       // 로그인 실패 시 프론트엔드로 리다이렉트
