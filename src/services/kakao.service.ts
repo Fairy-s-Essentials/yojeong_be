@@ -11,7 +11,6 @@ export class KakaoService {
    * @returns 카카오 인증 URL
    */
   static getAuthUrl(): string {
-    console.log('[카카오 서비스] getAuthUrl 호출됨');
     const params = {
       client_id: kakaoConfig.restApiKey, // REST API 키
       redirect_uri: kakaoConfig.redirectUri, // 로그인 후 돌아올 주소
@@ -19,9 +18,7 @@ export class KakaoService {
     };
 
     // URL 생성: https://kauth.kakao.com/oauth/authorize?client_id=...&redirect_uri=...
-    const authUrl = `${kakaoConfig.authUrl}/oauth/authorize?${qs.stringify(params)}`;
-    console.log('[카카오 서비스] 생성된 인증 URL:', authUrl);
-    return authUrl;
+    return `${kakaoConfig.authUrl}/oauth/authorize?${qs.stringify(params)}`;
   }
 
   /**
@@ -32,7 +29,6 @@ export class KakaoService {
    */
   static async getToken(code: string): Promise<KakaoTokenResponse> {
     try {
-      console.log('[카카오 서비스] getToken 호출됨 - code:', code);
       const params = {
         grant_type: 'authorization_code', // 권한 부여 타입 (고정값)
         client_id: kakaoConfig.restApiKey, // REST API 키
@@ -40,11 +36,6 @@ export class KakaoService {
         code, // 인가 코드
         client_secret: kakaoConfig.clientSecret // 클라이언트 시크릿 (선택)
       };
-
-      console.log('[카카오 서비스] 토큰 요청 파라미터:', {
-        ...params,
-        client_secret: params.client_secret ? '설정됨' : '없음'
-      });
 
       // POST 요청으로 토큰 받기
       const response = await axios.post<KakaoTokenResponse>(
@@ -57,25 +48,9 @@ export class KakaoService {
         }
       );
 
-      console.log('[카카오 서비스] 토큰 발급 성공:', {
-        access_token: response.data.access_token ? '발급됨' : '없음',
-        token_type: response.data.token_type,
-        expires_in: response.data.expires_in
-      });
-
       return response.data;
     } catch (error) {
       console.error('[카카오 서비스] 토큰 발급 오류:', error);
-      if (axios.isAxiosError(error)) {
-        console.error(
-          '[카카오 서비스] 에러 응답 데이터:',
-          error.response?.data
-        );
-        console.error(
-          '[카카오 서비스] 에러 응답 상태:',
-          error.response?.status
-        );
-      }
       throw new Error(`카카오 토큰 발급에 실패했습니다. ${error}`);
     }
   }
@@ -88,10 +63,6 @@ export class KakaoService {
    */
   static async getUserInfo(accessToken: string): Promise<KakaoUserResponse> {
     try {
-      console.log(
-        '[카카오 서비스] getUserInfo 호출됨 - accessToken:',
-        accessToken ? '있음' : '없음'
-      );
       const response = await axios.get<KakaoUserResponse>(
         `${kakaoConfig.apiUrl}/v2/user/me`,
         {
@@ -102,27 +73,9 @@ export class KakaoService {
         }
       );
 
-      console.log('[카카오 서비스] 사용자 정보 조회 성공:', {
-        id: response.data.id,
-        nickname:
-          response.data.kakao_account?.profile?.nickname ||
-          response.data.properties?.nickname,
-        email: response.data.kakao_account?.email
-      });
-
       return response.data;
     } catch (error) {
       console.error('[카카오 서비스] 사용자 정보 조회 오류:', error);
-      if (axios.isAxiosError(error)) {
-        console.error(
-          '[카카오 서비스] 에러 응답 데이터:',
-          error.response?.data
-        );
-        console.error(
-          '[카카오 서비스] 에러 응답 상태:',
-          error.response?.status
-        );
-      }
       throw new Error('카카오 사용자 정보 조회에 실패했습니다.');
     }
   }
@@ -134,10 +87,6 @@ export class KakaoService {
    */
   static async logout(accessToken: string): Promise<void> {
     try {
-      console.log(
-        '[카카오 서비스] logout 호출됨 - accessToken:',
-        accessToken ? '있음' : '없음'
-      );
       await axios.post(
         `${kakaoConfig.apiUrl}/v1/user/logout`,
         {}, // body는 빈 객체
@@ -147,19 +96,8 @@ export class KakaoService {
           }
         }
       );
-      console.log('[카카오 서비스] 로그아웃 성공');
     } catch (error) {
       console.error('[카카오 서비스] 로그아웃 오류:', error);
-      if (axios.isAxiosError(error)) {
-        console.error(
-          '[카카오 서비스] 에러 응답 데이터:',
-          error.response?.data
-        );
-        console.error(
-          '[카카오 서비스] 에러 응답 상태:',
-          error.response?.status
-        );
-      }
       throw new Error('카카오 로그아웃에 실패했습니다.');
     }
   }
@@ -171,10 +109,6 @@ export class KakaoService {
    */
   static async unlink(accessToken: string): Promise<void> {
     try {
-      console.log(
-        '[카카오 서비스] unlink 호출됨 - accessToken:',
-        accessToken ? '있음' : '없음'
-      );
       await axios.post(
         `${kakaoConfig.apiUrl}/v1/user/unlink`,
         {},
@@ -184,19 +118,8 @@ export class KakaoService {
           }
         }
       );
-      console.log('[카카오 서비스] 연결 해제 성공');
     } catch (error) {
       console.error('[카카오 서비스] 연결 해제 오류:', error);
-      if (axios.isAxiosError(error)) {
-        console.error(
-          '[카카오 서비스] 에러 응답 데이터:',
-          error.response?.data
-        );
-        console.error(
-          '[카카오 서비스] 에러 응답 상태:',
-          error.response?.status
-        );
-      }
       throw new Error('카카오 연결 해제에 실패했습니다.');
     }
   }

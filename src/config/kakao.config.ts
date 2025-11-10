@@ -17,11 +17,3 @@ export const kakaoConfig = {
   authUrl: 'https://kauth.kakao.com',
   apiUrl: 'https://kapi.kakao.com'
 };
-
-console.log('[카카오 설정] 카카오 설정 로드됨:', {
-  restApiKey: kakaoConfig.restApiKey ? '설정됨' : '없음',
-  redirectUri: kakaoConfig.redirectUri,
-  clientSecret: kakaoConfig.clientSecret ? '설정됨' : '없음',
-  authUrl: kakaoConfig.authUrl,
-  apiUrl: kakaoConfig.apiUrl
-});
