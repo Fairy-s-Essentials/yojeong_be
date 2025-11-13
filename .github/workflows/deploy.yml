@@ -1,0 +1,45 @@
+name: Deploy Backend to EC2 (PR merged into main)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            # Load NVM (required for yarn)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            echo "=== Backend: cd project ==="
+            cd ${{ secrets.EC2_BACKEND_PATH }}
+
+            echo "=== Backend: git pull ==="
+            git pull origin main
+
+            echo "=== Backend: yarn install ==="
+            yarn install --frozen-lockfile
+
+            echo "=== Backend: yarn build ==="
+            yarn build
+
+            echo "=== Backend: pm2 restart ==="
+            pm2 restart all
+
+            echo "=== Backend Deployment Completed ==="
