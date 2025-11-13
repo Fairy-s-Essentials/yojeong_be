@@ -27,6 +27,9 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
+            # Add yarn global bin (pm2 resides here)
+            export PATH=$PATH:$HOME/.yarn/bin
+
             echo "=== Backend: cd project ==="
             cd ${{ secrets.EC2_BACKEND_PATH }}
 
