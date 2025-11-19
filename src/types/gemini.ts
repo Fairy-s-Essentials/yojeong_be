@@ -12,7 +12,7 @@ export type GeminiPromptInput = GeminiGenerateContentProps & {
 export interface GeminiResponse {
   aiSummary: string;
   similarityScore: number;
-  aiWellUnderstood: [string, string, string];
-  aiMissedPoints: [string, string, string];
-  aiImprovements: [string, string, string];
+  aiWellUnderstood: string[];
+  aiMissedPoints: string[];
+  aiImprovements: string[];
 }

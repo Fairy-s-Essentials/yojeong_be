@@ -1,22 +1,5 @@
-// 원문, 사용자 요약 외 선택 사항
-// export interface SummaryInput {
-//   userId: number;
-//   originalText: string;
-//   originalUrl?: string | null;
-//   difficultyLevel?: 1 | 2 | 3 | 4 | 5;
-//   userSummary: string;
-//   criticalWeakness?: string;
-//   criticalOpposite?: string;
-//   criticalApplication?: string;
-// }
-
 import { GeminiResponse } from './gemini';
 
-// export interface SummaryResponse extends SummaryInput, AiSummaryResponse {
-//   id: number;
-//   learningNote: string | null;
-//   createdAt: string;
-// }
 
 export interface CreateSummaryReqBody {
   originalText: string; // 원문 텍스트
@@ -89,4 +72,69 @@ export interface GetSummariesQueryParams {
   limit?: string;
   isLatest?: string;
   search?: string;
+}
+
+// 평가 관련 타입
+
+/**
+ * 논리 품질 평가 등급
+ */
+export type LogicQuality =
+  | 'EXCELLENT'
+  | 'VERY_GOOD'
+  | 'GOOD'
+  | 'MODERATE'
+  | 'WEAK'
+  | 'POOR';
+
+/**
+ * 표현 정확성 평가 등급
+ */
+export type ExpressionAccuracy =
+  | 'PERFECT'
+  | 'EXCELLENT'
+  | 'GOOD'
+  | 'MODERATE'
+  | 'WEAK'
+  | 'POOR';
+
+/**
+ * 비판적 사고 반영도 평가 등급
+ */
+export type CriticalThinking = 'EXCELLENT' | 'GOOD' | 'WEAK' | 'NONE';
+
+/**
+ * LLM이 반환하는 평가 분석 결과 (CoT)
+ * @param keyPoints - AI가 도출한 핵심 포인트 목록
+ * @param userCoverage - 각 포인트의 사용자 요약 포함 여부
+ * @param logicAnalysis - 논리 흐름 분석 텍스트
+ * @param expressionAnalysis - 표현 정확성 분석 텍스트
+ * @param criticalAnalysis - 비판적 사고 반영 분석 (선택적)
+ */
+export interface EvaluationAnalysis {
+  keyPoints: string[]; 
+  userCoverage: boolean[]; 
+  logicAnalysis: string; 
+  expressionAnalysis: string; 
+  criticalAnalysis?: string; 
+}
+
+/**
+ * LLM이 반환하는 구조화된 평가 결과
+ * @param analysis - 평가 분석 결과
+ * @param logicQuality - 논리 품질 평가 등급
+ * @param expressionAccuracy - 표현 정확성 평가 등급
+ * @param criticalThinking - 비판적 사고 반영도 평가 등급(optional)
+ * @param aiWellUnderstood - AI가 이해한 핵심 포인트 목록
+ * @param aiMissedPoints - AI가 놓친 핵심 포인트 목록
+ * @param aiImprovements - AI가 개선할 점 목록
+ */
+export interface StructuredEvaluation {
+  analysis: EvaluationAnalysis;
+  logicQuality: LogicQuality;
+  expressionAccuracy: ExpressionAccuracy;
+  criticalThinking?: CriticalThinking; 
+  aiWellUnderstood: string[];
+  aiMissedPoints: string[];
+  aiImprovements: string[];
 }
