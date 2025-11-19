@@ -108,16 +108,29 @@ export const CRITICAL_THINKING_SCORES: Record<
 export const SCORE_WEIGHTS = {
   // 비판적 읽기 없을 때
   WITHOUT_CRITICAL: {
-    COVERAGE: 50, // 핵심 포인트 포함도
-    LOGIC: 30, // 논리 흐름
+    COVERAGE: 45, // 핵심 포인트 포함도
+    LOGIC: 35, // 논리 흐름
     EXPRESSION: 20 // 표현 정확성
   },
   // 비판적 읽기 있을 때
   WITH_CRITICAL: {
-    COVERAGE: 45, // 핵심 포인트 포함도
-    LOGIC: 25, // 논리 흐름
+    COVERAGE: 40, // 핵심 포인트 포함도
+    LOGIC: 30, // 논리 흐름
     EXPRESSION: 20, // 표현 정확성
     CRITICAL: 10 // 비판적 사고 반영도
   }
+};
+
+/**
+ * 상세함 감점 설정
+ */
+export const DETAIL_PENALTY = {
+  // 사용자 요약이 AI 요약 대비 이 비율보다 짧으면 감점
+  MIN_LENGTH_RATIO: 0.3, // 30%
+  // 길이 부족 시 감점
+  LENGTH_PENALTY: 10,
+  // 핵심 포인트 커버리지가 낮을 때 추가 감점
+  LOW_COVERAGE_THRESHOLD: 0.5, // 50% 미만
+  LOW_COVERAGE_PENALTY: 5
 };
 
