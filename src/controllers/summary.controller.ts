@@ -98,7 +98,9 @@ export const createSummaryController = async (
     const summaryEvaluationResponse = await geminiService.summaryEvaluation(
       originalText,
       userSummary,
-      aiSummaryResponse.aiSummary
+      aiSummaryResponse.aiSummary,
+      criticalWeakness,
+      criticalOpposite
     );
     console.log('--------------------------------');
     console.log('--------------------------------');
@@ -122,7 +124,6 @@ export const createSummaryController = async (
       userSummary,
       criticalWeakness,
       criticalOpposite,
-      aiSummary: aiSummaryResponse.aiSummary,
       ...summaryEvaluationResponse
     });
 
