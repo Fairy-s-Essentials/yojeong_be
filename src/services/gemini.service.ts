@@ -5,8 +5,11 @@ import {
 } from '../utils/prompt.util';
 import {
   getAiSummaryNumOfCharacterByOriginalText,
-  selectClosestSummary
+  selectClosestSummary,
+  calculateSimilarityScore
 } from '../utils/summary.util';
+import { StructuredEvaluation } from '../types/summary';
+import { GeminiResponse } from '../types/gemini';
 
 class GeminiService {
   private readonly genAI: GoogleGenAI;
@@ -46,28 +49,73 @@ class GeminiService {
   async summaryEvaluation(
     originalText: string,
     userSummary: string,
-    aiSummary: string
-  ) {
+    aiSummary: string,
+    criticalWeakness?: string,
+    criticalOpposite?: string
+  ): Promise<GeminiResponse> {
+    const hasCriticalReading = !!(criticalWeakness || criticalOpposite);
+
     const prompt = getSummaryEvaluationPrompt(
       originalText,
       userSummary,
-      aiSummary
+      aiSummary,
+      criticalWeakness,
+      criticalOpposite
     );
+
+    // 비판적 읽기 여부에 따라 다른 스키마 사용
+    const baseSchema = {
+      analysis: {
+        keyPoints: 'string[]',
+        userCoverage: 'boolean[]',
+        logicAnalysis: 'string',
+        expressionAnalysis: 'string'
+      },
+      logicQuality: 'string',
+      expressionAccuracy: 'string',
+      aiWellUnderstood: 'string[]',
+      aiMissedPoints: 'string[]',
+      aiImprovements: 'string[]'
+    };
+
+    const schemaWithCritical = {
+      ...baseSchema,
+      analysis: {
+        ...baseSchema.analysis,
+        criticalAnalysis: 'string'
+      },
+      criticalThinking: 'string'
+    };
+
     const response = await this.genAI.models.generateContent({
       model: this.model,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
-        responseJsonSchema: {
-          similarityScore: 'number',
-          aiWellUnderstood: 'string[]',
-          aiMissedPoints: 'string[]',
-          aiImprovements: 'string[]'
-        }
+        responseJsonSchema: hasCriticalReading
+          ? schemaWithCritical
+          : baseSchema
       }
     });
-    const parsedResponse = JSON.parse(response?.text || '{}');
-    return parsedResponse;
+
+    const structuredEvaluation: StructuredEvaluation = JSON.parse(
+      response?.text || '{}'
+    );
+
+    // 서버에서 최종 점수 계산
+    const similarityScore = calculateSimilarityScore(
+      structuredEvaluation,
+      hasCriticalReading
+    );
+
+    // 기존 GeminiResponse 형식으로 반환
+    return {
+      aiSummary,
+      similarityScore,
+      aiWellUnderstood: structuredEvaluation.aiWellUnderstood,
+      aiMissedPoints: structuredEvaluation.aiMissedPoints,
+      aiImprovements: structuredEvaluation.aiImprovements
+    };
   }
 }
 
