@@ -35,7 +35,10 @@ class GeminiService {
         responseMimeType: 'application/json',
         responseJsonSchema: {
           aiSummaries: 'string[]'
-        }
+        },
+        temperature: 0.3,
+        topK: 10,
+        topP: 0.5
       }
     });
     const parsedResponse = JSON.parse(response?.text || '{}');
@@ -89,7 +92,10 @@ class GeminiService {
         responseMimeType: 'application/json',
         responseJsonSchema: hasCriticalReading
           ? schemaWithCritical
-          : baseSchema
+          : baseSchema,
+        temperature: 0,      
+        topK: 1,            
+        topP: 0.1
       }
     });
 
@@ -129,7 +135,9 @@ class GeminiService {
     // 서버에서 최종 점수 계산
     const similarityScore = calculateSimilarityScore(
       structuredEvaluation,
-      hasCriticalReading
+      hasCriticalReading,
+      userSummary,
+      aiSummary
     );
 
     // 기존 GeminiResponse 형식으로 반환

@@ -3,7 +3,8 @@ import {
   LOGIC_QUALITY_SCORES,
   EXPRESSION_ACCURACY_SCORES,
   CRITICAL_THINKING_SCORES,
-  SCORE_WEIGHTS
+  SCORE_WEIGHTS,
+  DETAIL_PENALTY
 } from '../constant/evaluation.const';
 import {
   StructuredEvaluation,
@@ -56,14 +57,50 @@ export const selectClosestSummary = (
 };
 
 /**
+ * 상세함 부족에 대한 감점을 계산하는 함수
+ * @param userSummary - 사용자 요약
+ * @param aiSummary - AI 요약
+ * @param coverageRatio - 핵심 포인트 포함 비율
+ * @returns 감점 점수
+ */
+const calculateDetailPenalty = (
+  userSummary: string,
+  aiSummary: string,
+  coverageRatio: number
+): number => {
+  let penalty = 0;
+
+  // 공백 제외 길이 계산
+  const userLength = userSummary.replace(/\s/g, '').length;
+  const aiLength = aiSummary.replace(/\s/g, '').length;
+  const lengthRatio = aiLength > 0 ? userLength / aiLength : 1;
+
+  // 너무 짧은 요약 감점
+  if (lengthRatio < DETAIL_PENALTY.MIN_LENGTH_RATIO) {
+    penalty += DETAIL_PENALTY.LENGTH_PENALTY;
+  }
+
+  // 핵심 포인트 커버리지가 낮을 때 추가 감점
+  if (coverageRatio < DETAIL_PENALTY.LOW_COVERAGE_THRESHOLD) {
+    penalty += DETAIL_PENALTY.LOW_COVERAGE_PENALTY;
+  }
+
+  return penalty;
+};
+
+/**
  * LLM의 구조화된 평가 결과를 바탕으로 최종 similarityScore를 계산하는 함수
  * @param evaluation - LLM이 반환한 구조화된 평가 결과
  * @param hasCriticalReading - 비판적 읽기 여부
+ * @param userSummary - 사용자 요약 (상세함 감점 계산용)
+ * @param aiSummary - AI 요약 (상세함 감점 계산용)
  * @returns 최종 similarityScore (0-100)
  */
 export const calculateSimilarityScore = (
   evaluation: StructuredEvaluation,
-  hasCriticalReading: boolean
+  hasCriticalReading: boolean,
+  userSummary?: string,
+  aiSummary?: string
 ): number => {
   const {
     keyPoints,
@@ -105,6 +142,14 @@ export const calculateSimilarityScore = (
     totalScore += criticalScore;
   }
 
-  // 5. 반올림하여 정수로 반환 (0-100 범위)
+  // 5. 상세함 감점 적용
+  const penalty =
+    userSummary && aiSummary
+      ? calculateDetailPenalty(userSummary, aiSummary, coverageRatio)
+      : 0;
+
+  totalScore -= penalty;
+
+  // 6. 반올림하여 정수로 반환 (0-100 범위)
   return Math.round(Math.max(0, Math.min(100, totalScore)));
 };
