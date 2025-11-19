@@ -110,18 +110,6 @@ export type CriticalThinking = 'EXCELLENT' | 'GOOD' | 'WEAK' | 'NONE';
  * @param logicAnalysis - 논리 흐름 분석 텍스트
  * @param expressionAnalysis - 표현 정확성 분석 텍스트
  * @param criticalAnalysis - 비판적 사고 반영 분석 (선택적)
- */
-export interface EvaluationAnalysis {
-  keyPoints: string[]; 
-  userCoverage: boolean[]; 
-  logicAnalysis: string; 
-  expressionAnalysis: string; 
-  criticalAnalysis?: string; 
-}
-
-/**
- * LLM이 반환하는 구조화된 평가 결과
- * @param analysis - 평가 분석 결과
  * @param logicQuality - 논리 품질 평가 등급
  * @param expressionAccuracy - 표현 정확성 평가 등급
  * @param criticalThinking - 비판적 사고 반영도 평가 등급(optional)
@@ -130,10 +118,14 @@ export interface EvaluationAnalysis {
  * @param aiImprovements - AI가 개선할 점 목록
  */
 export interface StructuredEvaluation {
-  analysis: EvaluationAnalysis;
+  keyPoints: string[];
+  userCoverage: boolean[];
+  logicAnalysis: string;
+  expressionAnalysis: string;
+  criticalAnalysis?: string;
   logicQuality: LogicQuality;
   expressionAccuracy: ExpressionAccuracy;
-  criticalThinking?: CriticalThinking; 
+  criticalThinking?: CriticalThinking;
   aiWellUnderstood: string[];
   aiMissedPoints: string[];
   aiImprovements: string[];
