@@ -65,12 +65,10 @@ class GeminiService {
 
     // 비판적 읽기 여부에 따라 다른 스키마 사용
     const baseSchema = {
-      analysis: {
-        keyPoints: 'string[]',
-        userCoverage: 'boolean[]',
-        logicAnalysis: 'string',
-        expressionAnalysis: 'string'
-      },
+      keyPoints: 'string[]',
+      userCoverage: 'boolean[]',
+      logicAnalysis: 'string',
+      expressionAnalysis: 'string',
       logicQuality: 'string',
       expressionAccuracy: 'string',
       aiWellUnderstood: 'string[]',
@@ -80,10 +78,7 @@ class GeminiService {
 
     const schemaWithCritical = {
       ...baseSchema,
-      analysis: {
-        ...baseSchema.analysis,
-        criticalAnalysis: 'string'
-      },
+      criticalAnalysis: 'string',
       criticalThinking: 'string'
     };
 
@@ -101,6 +96,35 @@ class GeminiService {
     const structuredEvaluation: StructuredEvaluation = JSON.parse(
       response?.text || '{}'
     );
+
+    // 필수 데이터 검증
+    if (
+      !structuredEvaluation.keyPoints ||
+      !structuredEvaluation.userCoverage ||
+      !structuredEvaluation.logicQuality ||
+      !structuredEvaluation.expressionAccuracy
+    ) {
+      console.error('LLM 응답 형식 오류:', structuredEvaluation);
+      throw new Error(
+        'AI_SERVICE_ERROR: LLM이 예상과 다른 형식으로 응답했습니다.'
+      );
+    }
+
+    // 배열 길이 일치 검증
+    if (
+      structuredEvaluation.keyPoints.length !==
+      structuredEvaluation.userCoverage.length
+    ) {
+      console.error(
+        'keyPoints와 userCoverage 길이 불일치:',
+        structuredEvaluation.keyPoints.length,
+        'vs',
+        structuredEvaluation.userCoverage.length
+      );
+      throw new Error(
+        'AI_SERVICE_ERROR: 평가 데이터가 올바르지 않습니다.'
+      );
+    }
 
     // 서버에서 최종 점수 계산
     const similarityScore = calculateSimilarityScore(

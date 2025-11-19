@@ -65,12 +65,17 @@ export const calculateSimilarityScore = (
   evaluation: StructuredEvaluation,
   hasCriticalReading: boolean
 ): number => {
-  const { analysis, logicQuality, expressionAccuracy, criticalThinking } =
-    evaluation;
+  const {
+    keyPoints,
+    userCoverage,
+    logicQuality,
+    expressionAccuracy,
+    criticalThinking
+  } = evaluation;
 
   // 1. 핵심 포인트 포함도 계산
-  const keyPointsCovered = analysis.userCoverage.filter(Boolean).length;
-  const totalKeyPoints = analysis.keyPoints.length;
+  const keyPointsCovered = userCoverage.filter(Boolean).length;
+  const totalKeyPoints = keyPoints.length;
 
   // 0으로 나누기 방지
   const coverageRatio =

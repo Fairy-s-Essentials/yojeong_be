@@ -173,24 +173,22 @@ ${
 
 ## 출력 형식 (JSON만 반환)
 
-반드시 아래 형식을 정확히 따르세요:
+⚠️ 반드시 아래 형식을 정확히 따르세요:
 
 {
-  "analysis": {
-    "keyPoints": ["포인트1", "포인트2", "포인트3", "..."],
-    "userCoverage": [true, false, true, ...],
-    "logicAnalysis": "논리 흐름 분석 내용 (2-3문장)",
-    "expressionAnalysis": "표현 정확성 분석 내용 (2-3문장)"${
-      hasCriticalReading ? ',\n    "criticalAnalysis": "비판적 사고 반영 분석 내용 (2-3문장)"' : ''
-    }
-  },
+  "keyPoints": ["포인트1", "포인트2", "포인트3"],
+  "userCoverage": [true, false, true],
+  "logicAnalysis": "논리 흐름 분석 내용 (2-3문장)",
+  "expressionAnalysis": "표현 정확성 분석 내용 (2-3문장)",${
+    hasCriticalReading ? '\n  "criticalAnalysis": "비판적 사고 반영 분석 내용 (2-3문장)",' : ''
+  }
   "logicQuality": "EXCELLENT | VERY_GOOD | GOOD | MODERATE | WEAK | POOR",
-  "expressionAccuracy": "PERFECT | EXCELLENT | GOOD | MODERATE | WEAK | POOR"${
-    hasCriticalReading ? ',\n  "criticalThinking": "EXCELLENT | GOOD | WEAK | NONE"' : ''
-  },
+  "expressionAccuracy": "PERFECT | EXCELLENT | GOOD | MODERATE | WEAK | POOR",${
+    hasCriticalReading ? '\n  "criticalThinking": "EXCELLENT | GOOD | WEAK | NONE",' : ''
+  }
   "aiWellUnderstood": ["...", "..."],
   "aiMissedPoints": ["...", "..."],
-  "aiImprovements": ["...", "..."]
+  "aiImprovements": ["..."]
 }
 
 ⚠️ 주의: keyPoints 배열과 userCoverage 배열의 길이는 반드시 같아야 합니다!
