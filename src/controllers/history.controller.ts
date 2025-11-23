@@ -90,8 +90,6 @@ export const getAccuracyTrendController = async (
   }
 };
 
-
-
 /**
  * 학습 기록이 존재하는 연도 목록을 조회하는 컨트롤러
  */
