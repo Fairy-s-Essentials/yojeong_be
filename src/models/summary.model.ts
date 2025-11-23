@@ -5,15 +5,19 @@ import { HistoryPeriod, AccuracyDataPoint, LearningDay } from '../types/history'
 import { HISTORY_PERIOD, SQL_INTERVAL_UNIT } from '../constant/history.const';
 
 /**
- * 객체의 모든 BigInt 값을 Number로 변환하는 헬퍼 함수
+ * DB 조회 결과의 숫자 타입을 정규화하는 헬퍼 함수
+ * - BigInt → Number 변환
+ * - 숫자 형태의 문자열 → Number 변환 (MariaDB DECIMAL/AVG 결과)
+ * @param obj - 변환할 객체
+ * @returns 정규화된 객체
  */
-const convertBigIntToNumber = (obj: any): any => {
+const normalizeNumericValues = (obj: any): any => {
   if (obj === null || obj === undefined) {
     return obj;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => convertBigIntToNumber(item));
+    return obj.map((item) => normalizeNumericValues(item));
   }
 
   if (typeof obj === 'object') {
@@ -27,8 +31,10 @@ const convertBigIntToNumber = (obj: any): any => {
       const value = obj[key];
       if (typeof value === 'bigint') {
         converted[key] = Number(value);
+} else if (typeof value === 'string' && value.trim() !== '' && isFinite(Number(value))) {
+        converted[key] = Number(value);
       } else if (typeof value === 'object') {
-        converted[key] = convertBigIntToNumber(value);
+        converted[key] = normalizeNumericValues(value);
       } else {
         converted[key] = value;
       }
@@ -99,7 +105,7 @@ export const getRecentSummary = async (userId: number) => {
     const result: any = await pool.query(query, params);
 
     // 모든 BigInt 필드를 Number로 변환
-    return convertBigIntToNumber(result || []);
+    return normalizeNumericValues(result || []);
   } catch (error) {
     console.error('최근 요약 조회 실패:', error);
     // 커스텀 에러 메시지로 throw
@@ -123,7 +129,7 @@ export const getWeeklySummaryCountByUserId = async (userId: number) => {
     const params = [userId];
 
     const result: any = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
     return converted[0]?.count || 0;
   } catch (error) {
     console.error('주간 요약 조회 실패:', error);
@@ -145,7 +151,7 @@ export const getScoreAverageByUserId = async (userId: number) => {
     const params = [userId];
 
     const result: any = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
     return Math.round(converted[0]?.avg || 0);
   } catch (error) {
     console.error('평균정확도 조회 실패:', error);
@@ -170,7 +176,7 @@ export const getContinuousLearningDaysByUserId = async (userId: number) => {
     `;
     const params = [userId];
     const result: any = await pool.query(query, params);
-    const rows = convertBigIntToNumber(result);
+    const rows = normalizeNumericValues(result);
 
     if (!rows || rows.length === 0) {
       return 0;
@@ -210,7 +216,7 @@ export const getSummaryDetailById = async (id: number) => {
   const params = [id];
   const result: any = await pool.query(query, params);
   console.log(result);
-  return convertBigIntToNumber(result[0]);
+  return normalizeNumericValues(result[0]);
 };
 
 /**
@@ -239,7 +245,7 @@ export const getSummaryCountByPeriod = async (
 
     const params = [userId];
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
     return converted[0]?.count || 0;
   } catch (error) {
     console.error('기간별 요약 개수 조회 실패:', error);
@@ -273,7 +279,7 @@ export const getScoreAverageByPeriod = async (
 
     const params = [userId];
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
     return Math.round(converted[0]?.avg || 0);
   } catch (error) {
     console.error('기간별 평균 정확도 조회 실패:', error);
@@ -327,7 +333,7 @@ export const getAccuracyTrendByPeriod = async (
 
     const params = [userId];
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
 
     return converted || [];
   } catch (error) {
@@ -352,7 +358,7 @@ export const getCalendarYears = async (userId: number): Promise<number[]> => {
 
     const params = [userId];
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
 
     // 연도만 추출하여 배열로 반환
     return (converted as Array<{ year: number }>).map((row) => row.year);
@@ -388,7 +394,7 @@ export const getCalendarByYear = async (
 
     const params = [userId, year];
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
 
     return converted || [];
   } catch (error) {
@@ -462,7 +468,7 @@ export const getSummariesWithPagination = async (
 
     params.push(limit, offset);
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
 
     return converted || [];
   } catch (error) {
@@ -519,7 +525,7 @@ export const getTotalSummariesCount = async (
     `;
 
     const result: unknown = await pool.query(query, params);
-    const converted = convertBigIntToNumber(result);
+    const converted = normalizeNumericValues(result);
 
     return converted[0]?.count || 0;
   } catch (error) {
