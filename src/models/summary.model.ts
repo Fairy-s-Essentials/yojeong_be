@@ -31,7 +31,7 @@ const normalizeNumericValues = (obj: any): any => {
       const value = obj[key];
       if (typeof value === 'bigint') {
         converted[key] = Number(value);
-      } else if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+} else if (typeof value === 'string' && value.trim() !== '' && isFinite(Number(value))) {
         converted[key] = Number(value);
       } else if (typeof value === 'object') {
         converted[key] = normalizeNumericValues(value);
