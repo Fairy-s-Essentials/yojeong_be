@@ -34,6 +34,7 @@ export const getUsageByUserId = async (userId: number) => {
  * - 오늘 기록이 없으면 새로 생성하고 usage = 1 로 설정
  * - 이미 기록이 있으면 usage = usage + 1 로 업데이트
  * @param userId - 사용자 ID
+ * @returns - 사용량, 하루 제한량
  */
 export const updateUsage = async (userId: number) => {
   try {
@@ -51,6 +52,7 @@ export const updateUsage = async (userId: number) => {
          VALUES (?, 1, 10, CURDATE())`,
         [userId]
       );
+      return { usage: 1, limit: 10 };
     }
 
     // 이미 기록이 있는 경우 usage + 1 업데이트
@@ -63,6 +65,8 @@ export const updateUsage = async (userId: number) => {
        WHERE id = ?`,
       [newUsage, record.id]
     );
+
+    return { usage: newUsage, limit: record.limit };
   } catch (error) {
     console.error('사용량 증가 실패: ', error);
 

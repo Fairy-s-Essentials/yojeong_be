@@ -66,3 +66,10 @@ export function validateSummaryInput(
     message: '검증 성공'
   };
 }
+
+/**
+ * 사용자 분석 사용량 검증
+ */
+export function isUsageLimitExceeded(usage: number, limit: number): boolean {
+  return usage >= limit;
+}

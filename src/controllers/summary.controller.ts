@@ -7,7 +7,11 @@ import {
   getSummariesWithPagination,
   getTotalSummariesCount
 } from '../models/summary.model';
-import { validateSummaryInput } from '../utils/validation.util';
+import { getUsageByUserId, updateUsage } from '../models/usage.model';
+import {
+  isUsageLimitExceeded,
+  validateSummaryInput
+} from '../utils/validation.util';
 import { getTestSummary, saveLearningNote } from '../services/summary.service';
 import {
   CreateSummaryReqBody,
@@ -52,7 +56,19 @@ export const createSummaryController = async (
     const userId = user.id;
     const userInput = req.body;
 
-    // 여기서 사용자의 사용량 조회 후 10번을 초과했으면 return
+    // 사용자 분석 사용량 검증
+    const { usage, limit } = await getUsageByUserId(userId);
+
+    if (isUsageLimitExceeded(usage, limit)) {
+      return res.status(429).json({
+        success: false,
+        error: {
+          code: 'USAGE_LIMIT_EXCEEDED',
+          message: '오늘의 분석 요청 가능 횟수를 모두 사용했습니다.',
+          details: `오늘 ${usage}/${limit}회 사용했습니다. 내일 다시 시도해주세요.`
+        }
+      });
+    }
 
     // 사용자 입력값 검증
     const { isValid, message } = validateSummaryInput(userInput);
@@ -129,11 +145,18 @@ export const createSummaryController = async (
       ...summaryEvaluationResponse
     });
 
+    // 분석 성공 시 사용량 업데이트
+    const resultUsage = await updateUsage(userId);
+
     // 성공 응답
     return res.status(200).json({
       success: true,
       message: 'Summary 생성 성공',
-      data: { resultId: Number(resultId) }
+      data: {
+        resultId: Number(resultId),
+        usage: resultUsage.usage,
+        limit: resultUsage.limit
+      }
     });
   } catch (error: any) {
     // AI 서비스 에러 처리
