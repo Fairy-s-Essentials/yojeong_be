@@ -32,10 +32,10 @@ authRouter.post('/logout', AuthController.logout);
 authRouter.get('/me', AuthController.getCurrentUser);
 
 /**
- * DELETE /api/auth/unlink
- * 회원 탈퇴 (선택적 기능)
- * 카카오 연결 해제 + DB에서 삭제
+ * DELETE /api/auth/withdraw
+ * 회원 탈퇴
+ * 카카오 연결 해제 + DB에서 소프트 삭제 (is_deleted = 1)
  */
-authRouter.delete('/unlink', AuthController.unlink);
+authRouter.delete('/withdraw', AuthController.withdraw);
 
 export default authRouter;

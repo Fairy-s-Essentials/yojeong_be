@@ -133,6 +133,25 @@ export class UserModel {
       conn.release();
     }
   }
+
+  /**
+   * 사용자 소프트 삭제 (회원 탈퇴)
+   * @param kakaoId - 카카오 고유 ID
+   */
+  static async softDelete(kakaoId: number): Promise<void> {
+    const conn = await pool.getConnection();
+    try {
+      const query = `
+        UPDATE users
+        SET is_deleted = 1
+        WHERE kakao_id = ? AND is_deleted = 0
+      `;
+
+      await conn.query(query, [String(kakaoId)]);
+    } finally {
+      conn.release();
+    }
+  }
 }
 
 export default UserModel;

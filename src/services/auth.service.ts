@@ -97,8 +97,8 @@ export class AuthService {
       // 카카오 연결 해제
       await KakaoService.unlink(accessToken);
 
-      // TODO: DB에서 소프트 삭제 구현 필요
-      // UserModel.softDelete(kakaoId) 같은 함수 추가
+      // DB에서 소프트 삭제
+      await UserModel.softDelete(kakaoId);
     } catch (error) {
       console.error('[인증 서비스] 회원 탈퇴 처리 오류:', error);
       throw new Error('회원 탈퇴 처리 중 오류가 발생했습니다.');
