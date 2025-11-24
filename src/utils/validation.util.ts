@@ -68,6 +68,28 @@ export function validateSummaryInput(
 }
 
 /**
+ * VOC 입력값 검증
+ */
+export function validateVocInput(input: string): ValidationResult {
+  if (isEmpty(input)) {
+    return {
+      isValid: false,
+      message: '내용은 필수 입력값입니다.'
+    };
+  } else if (input.length > 3000) {
+    return {
+      isValid: false,
+      message: '내용은 3000자 이하여야 합니다.'
+    };
+  }
+
+  return {
+    isValid: true,
+    message: '검증 성공'
+  };
+}
+
+/**
  * 사용자 분석 사용량 검증
  */
 export function isUsageLimitExceeded(usage: number, limit: number): boolean {
