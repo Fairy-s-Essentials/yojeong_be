@@ -1,11 +1,12 @@
 import { pool } from '../config/db';
+import { Usage } from '../types/usage';
 
 /**
  * 사용자의 분석 사용량을 조회하는 함수
  * @param userId - 사용자 ID
  * @returns - 사용량, 하루 제한량
  */
-export const getUsageByUserId = async (userId: number) => {
+export const getUsageByUserId = async (userId: number): Promise<Usage> => {
   try {
     const [rows] = await pool.query(
       `SELECT usage, \`limit\` 
@@ -19,7 +20,7 @@ export const getUsageByUserId = async (userId: number) => {
       return { usage: 0, limit: 10 };
     }
 
-    return rows[0] as { usage: number; limit: number };
+    return rows[0] as Usage;
   } catch (error) {
     console.error('사용량 조회 실패: ', error);
 
@@ -36,7 +37,7 @@ export const getUsageByUserId = async (userId: number) => {
  * @param userId - 사용자 ID
  * @returns - 사용량, 하루 제한량
  */
-export const updateUsage = async (userId: number) => {
+export const updateUsage = async (userId: number): Promise<Usage> => {
   try {
     const [rows] = await pool.query(
       `SELECT id, usage, \`limit\` 

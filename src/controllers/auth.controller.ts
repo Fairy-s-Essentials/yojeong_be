@@ -169,8 +169,8 @@ export class AuthController {
   }
 
   /**
-   * DELETE /api/auth/unlink (선택적 기능)
-   * 회원 탈퇴 - 카카오 연결 해제 + DB에서 삭제
+   * DELETE /api/auth/withdraw
+   * 회원 탈퇴 - 카카오 연결 해제 + DB에서 소프트 삭제 (is_deleted = 1)
    */
   static async unlink(req: Request, res: Response): Promise<void> {
     try {
