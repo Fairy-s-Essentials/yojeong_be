@@ -1,7 +1,11 @@
 import { pool } from '../config/db';
 
 import { InsertSummaryModel } from '../types/summary';
-import { HistoryPeriod, AccuracyDataPoint, LearningDay } from '../types/history';
+import {
+  HistoryPeriod,
+  AccuracyDataPoint,
+  LearningDay
+} from '../types/history';
 import { HISTORY_PERIOD, SQL_INTERVAL_UNIT } from '../constant/history.const';
 
 /**
@@ -31,7 +35,11 @@ const normalizeNumericValues = (obj: any): any => {
       const value = obj[key];
       if (typeof value === 'bigint') {
         converted[key] = Number(value);
-} else if (typeof value === 'string' && value.trim() !== '' && isFinite(Number(value))) {
+      } else if (
+        typeof value === 'string' &&
+        value.trim() !== '' &&
+        isFinite(Number(value))
+      ) {
         converted[key] = Number(value);
       } else if (typeof value === 'object') {
         converted[key] = normalizeNumericValues(value);
@@ -425,7 +433,7 @@ export const getSummariesWithPagination = async (
 
     if (search && search.trim()) {
       const searchTerm = search.trim();
-      
+
       // 검색어 길이에 따라 Full-Text Search 또는 LIKE 사용
       // Full-Text의 ft_min_word_len이 4인 경우를 고려
       if (searchTerm.length >= 4) {
@@ -493,7 +501,7 @@ export const getTotalSummariesCount = async (
 
     if (search && search.trim()) {
       const searchTerm = search.trim();
-      
+
       // 검색어 길이에 따라 Full-Text Search 또는 LIKE 사용
       if (searchTerm.length >= 4) {
         // 4글자 이상: Full-Text Search 시도

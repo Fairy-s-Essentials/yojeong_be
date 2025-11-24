@@ -136,18 +136,104 @@ export class UserModel {
 
   /**
    * 사용자 소프트 삭제 (회원 탈퇴)
+   * - 사용자 테이블: is_deleted = 1로 소프트 삭제
+   * - 관련 데이터: summaries, vocs, usages 물리적 삭제
    * @param kakaoId - 카카오 고유 ID
    */
   static async softDelete(kakaoId: number): Promise<void> {
     const conn = await pool.getConnection();
     try {
+      await conn.beginTransaction();
+
+      // user_id 조회
+      const userQuery = 'SELECT id FROM users WHERE kakao_id = ? AND is_deleted = 0';
+      const userRows = (await conn.query(userQuery, [String(kakaoId)])) as DbUser[];
+
+      if (!userRows || userRows.length === 0) {
+        throw new Error('탈퇴할 사용자를 찾을 수 없습니다.');
+      }
+
+      const userId = userRows[0].id;
+
+      // 관련 데이터 삭제
+      await conn.query('DELETE FROM summaries WHERE user_id = ?', [userId]);
+      await conn.query('DELETE FROM vocs WHERE user_id = ?', [userId]);
+      await conn.query('DELETE FROM usages WHERE user_id = ?', [userId]);
+
+      // 사용자 소프트 삭제
+      await conn.query(
+        'UPDATE users SET is_deleted = 1 WHERE kakao_id = ? AND is_deleted = 0',
+        [String(kakaoId)]
+      );
+
+      await conn.commit();
+    } catch (error) {
+      // 에러 발생 시 롤백
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  /**
+   * 탈퇴한 사용자 찾기 (재가입 처리용)
+   * @param kakaoId - 카카오 고유 ID
+   * @returns 탈퇴한 사용자 정보 또는 null
+   */
+  static async findDeletedByKakaoId(kakaoId: number): Promise<User | null> {
+    const conn = await pool.getConnection();
+    try {
+      const query = 'SELECT * FROM users WHERE kakao_id = ? AND is_deleted = 1';
+      const rows = (await conn.query(query, [String(kakaoId)])) as DbUser[];
+
+      if (!rows || rows.length === 0) {
+        return null;
+      }
+
+      return this.dbToUser(rows[0]);
+    } finally {
+      conn.release();
+    }
+  }
+
+  /**
+   * 탈퇴한 사용자 복원 및 정보 업데이트 (재가입)
+   * @param kakaoId - 카카오 고유 ID
+   * @param userData - 업데이트할 사용자 정보
+   * @returns 복원된 사용자 정보
+   */
+  static async restoreAndUpdate(
+    kakaoId: number,
+    userData: {
+      email?: string;
+      nickname: string;
+      profile_image?: string;
+    }
+  ): Promise<User> {
+    const conn = await pool.getConnection();
+    try {
       const query = `
         UPDATE users
-        SET is_deleted = 1
-        WHERE kakao_id = ? AND is_deleted = 0
+        SET email = ?, nickname = ?, profile_image = ?, is_deleted = 0
+        WHERE kakao_id = ?
       `;
 
-      await conn.query(query, [String(kakaoId)]);
+      await conn.query(query, [
+        userData.email || null,
+        userData.nickname,
+        userData.profile_image || null,
+        String(kakaoId),
+      ]);
+
+      // 복원된 사용자 정보 조회
+      const user = await this.findByKakaoId(kakaoId);
+
+      if (!user) {
+        throw new Error('사용자 복원 후 조회 실패');
+      }
+
+      return user;
     } finally {
       conn.release();
     }
