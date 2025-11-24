@@ -18,7 +18,7 @@ export class UserModel {
       nickname: dbUser.nickname,
       profile_image: dbUser.profile_image || undefined,
       created_at: dbUser.created_at,
-      updated_at: dbUser.updated_at,
+      updated_at: dbUser.updated_at
     };
   }
 
@@ -65,7 +65,7 @@ export class UserModel {
         String(userData.kakao_id),
         userData.email || null,
         userData.nickname,
-        userData.profile_image || null,
+        userData.profile_image || null
       ])) as DbInsertResult;
 
       // 생성된 사용자 정보 반환
@@ -74,7 +74,7 @@ export class UserModel {
         kakao_id: userData.kakao_id,
         email: userData.email,
         nickname: userData.nickname,
-        profile_image: userData.profile_image,
+        profile_image: userData.profile_image
       };
     } finally {
       conn.release();
@@ -106,7 +106,7 @@ export class UserModel {
         userData.email || null,
         userData.nickname || null,
         userData.profile_image || null,
-        String(kakaoId),
+        String(kakaoId)
       ]);
     } finally {
       conn.release();
@@ -146,8 +146,11 @@ export class UserModel {
       await conn.beginTransaction();
 
       // user_id 조회
-      const userQuery = 'SELECT id FROM users WHERE kakao_id = ? AND is_deleted = 0';
-      const userRows = (await conn.query(userQuery, [String(kakaoId)])) as DbUser[];
+      const userQuery =
+        'SELECT id FROM users WHERE kakao_id = ? AND is_deleted = 0';
+      const userRows = (await conn.query(userQuery, [
+        String(kakaoId)
+      ])) as DbUser[];
 
       if (!userRows || userRows.length === 0) {
         throw new Error('탈퇴할 사용자를 찾을 수 없습니다.');
@@ -156,9 +159,11 @@ export class UserModel {
       const userId = userRows[0].id;
 
       // 관련 데이터 삭제
-      await conn.query('DELETE FROM summaries WHERE user_id = ?', [userId]);
-      await conn.query('DELETE FROM vocs WHERE user_id = ?', [userId]);
-      await conn.query('DELETE FROM usages WHERE user_id = ?', [userId]);
+      await Promise.all([
+        conn.query('DELETE FROM summaries WHERE user_id = ?', [userId]),
+        conn.query('DELETE FROM vocs WHERE user_id = ?', [userId]),
+        conn.query('DELETE FROM usages WHERE user_id = ?', [userId])
+      ]);
 
       // 사용자 소프트 삭제
       await conn.query(
@@ -223,7 +228,7 @@ export class UserModel {
         userData.email || null,
         userData.nickname,
         userData.profile_image || null,
-        String(kakaoId),
+        String(kakaoId)
       ]);
 
       // 복원된 사용자 정보 조회
