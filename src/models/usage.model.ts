@@ -8,15 +8,18 @@ import { Usage } from '../types/usage';
  */
 export const getUsageByUserId = async (userId: number): Promise<Usage> => {
   try {
-    const [rows] = await pool.query(
-      `SELECT usage, \`limit\` 
+    const result = await pool.query(
+      `SELECT \`usage\`, \`limit\` 
        FROM usages 
        WHERE user_id = ? AND usage_date = CURDATE()`,
       [userId]
     );
 
+    // result가 배열인 경우 첫 번째 요소가 rows
+    const rows = Array.isArray(result) ? result : [];
+
     // 결과가 없으면 오늘 기록이 없으므로 0을 반환
-    if ((rows as any[]).length === 0) {
+    if (!rows || rows.length === 0) {
       return { usage: 0, limit: 10 };
     }
 
@@ -42,21 +45,27 @@ export const updateUsage = async (userId: number): Promise<Usage> => {
     // INSERT + UPDATE를 원자적으로 처리
     await pool.query(
       `
-      INSERT INTO usages (user_id, usage, \`limit\`, usage_date)
+      INSERT INTO usages (user_id, \`usage\`, \`limit\`, usage_date)
       VALUES (?, 1, 10, CURDATE())
       ON DUPLICATE KEY UPDATE
-        usage = usage + 1
+        \`usage\` = \`usage\` + 1
       `,
       [userId]
     );
 
     // 최신 사용량 조회
-    const [rows] = await pool.query(
-      `SELECT usage, \`limit\` FROM usages WHERE user_id = ? AND usage_date = CURDATE()`,
+    const result = await pool.query(
+      `SELECT \`usage\`, \`limit\` FROM usages WHERE user_id = ? AND usage_date = CURDATE()`,
       [userId]
     );
 
-    return (rows as Usage[])[0];
+    const rows = Array.isArray(result) ? result : [];
+    
+    if (!rows || rows.length === 0) {
+      throw new Error('사용량 업데이트 후 조회 실패');
+    }
+
+    return rows[0] as Usage;
   } catch (error) {
     console.error('사용량 증가 실패:', error);
     throw new Error(
