@@ -172,7 +172,7 @@ export class AuthController {
    * DELETE /api/auth/withdraw
    * 회원 탈퇴 - 카카오 연결 해제 + DB에서 소프트 삭제 (is_deleted = 1)
    */
-  static async unlink(req: Request, res: Response): Promise<void> {
+  static async withdraw(req: Request, res: Response): Promise<void> {
     try {
       const { user, accessToken } = req.session;
 

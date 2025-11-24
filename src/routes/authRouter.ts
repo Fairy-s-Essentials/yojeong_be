@@ -36,6 +36,6 @@ authRouter.get('/me', AuthController.getCurrentUser);
  * 회원 탈퇴
  * 카카오 연결 해제 + DB에서 소프트 삭제 (is_deleted = 1)
  */
-authRouter.delete('/withdraw', AuthController.unlink);
+authRouter.delete('/withdraw', AuthController.withdraw);
 
 export default authRouter;
