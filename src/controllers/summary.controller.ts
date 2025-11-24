@@ -52,6 +52,8 @@ export const createSummaryController = async (
     const userId = user.id;
     const userInput = req.body;
 
+    // 여기서 사용자의 사용량 조회 후 10번을 초과했으면 return
+
     // 사용자 입력값 검증
     const { isValid, message } = validateSummaryInput(userInput);
 
