@@ -177,21 +177,3 @@ export interface IntegratedEvaluation {
   critical?: CriticalThinkingEvaluation;
   feedback: FeedbackEvaluation;
 }
-
-/**
- * LLM이 반환하는 평가 분석 결과 (CoT) - 레거시 호환용
- * @deprecated IntegratedEvaluation 사용 권장
- */
-export interface StructuredEvaluation {
-  keyPoints: string[];
-  userCoverage: boolean[];
-  logicAnalysis: string;
-  expressionAnalysis: string;
-  criticalAnalysis?: string;
-  logicQuality: LogicQuality;
-  expressionAccuracy: ExpressionAccuracy;
-  criticalThinking?: CriticalThinking;
-  aiWellUnderstood: string[];
-  aiMissedPoints: string[];
-  aiImprovements: string[];
-}
