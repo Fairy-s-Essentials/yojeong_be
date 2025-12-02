@@ -18,6 +18,7 @@ import {
   ExpressionEvaluation,
   CriticalThinkingEvaluation,
   FeedbackEvaluation,
+  IntegratedEvaluation,
   StructuredEvaluation
 } from '../types/summary';
 import { GeminiResponse } from '../types/gemini';
@@ -347,21 +348,30 @@ class GeminiService {
         critical
       );
 
-      // StructuredEvaluation 형식으로 변환 (점수 계산용)
+      // IntegratedEvaluation 구성
+      const integratedEvaluation: IntegratedEvaluation = {
+        keyPoints,
+        logic,
+        expression,
+        ...(critical && { critical }),
+        feedback
+      };
+
+      // StructuredEvaluation 형식으로 변환 (점수 계산용 레거시 호환)
       const structuredEvaluation: StructuredEvaluation = {
-        keyPoints: keyPoints.keyPoints,
-        userCoverage: keyPoints.userCoverage,
-        logicAnalysis: logic.analysis,
-        logicQuality: logic.quality,
-        expressionAnalysis: expression.analysis,
-        expressionAccuracy: expression.accuracy,
-        ...(critical && {
-          criticalAnalysis: critical.analysis,
-          criticalThinking: critical.thinking
+        keyPoints: integratedEvaluation.keyPoints.keyPoints,
+        userCoverage: integratedEvaluation.keyPoints.userCoverage,
+        logicAnalysis: integratedEvaluation.logic.analysis,
+        logicQuality: integratedEvaluation.logic.quality,
+        expressionAnalysis: integratedEvaluation.expression.analysis,
+        expressionAccuracy: integratedEvaluation.expression.accuracy,
+        ...(integratedEvaluation.critical && {
+          criticalAnalysis: integratedEvaluation.critical.analysis,
+          criticalThinking: integratedEvaluation.critical.thinking
         }),
-        aiWellUnderstood: feedback.wellUnderstood,
-        aiMissedPoints: feedback.missedPoints,
-        aiImprovements: feedback.improvements
+        aiWellUnderstood: integratedEvaluation.feedback.wellUnderstood,
+        aiMissedPoints: integratedEvaluation.feedback.missedPoints,
+        aiImprovements: integratedEvaluation.feedback.improvements
       };
 
       // 서버에서 최종 점수 계산
@@ -376,9 +386,9 @@ class GeminiService {
       return {
         aiSummary,
         similarityScore,
-        aiWellUnderstood: feedback.wellUnderstood,
-        aiMissedPoints: feedback.missedPoints,
-        aiImprovements: feedback.improvements
+        aiWellUnderstood: integratedEvaluation.feedback.wellUnderstood,
+        aiMissedPoints: integratedEvaluation.feedback.missedPoints,
+        aiImprovements: integratedEvaluation.feedback.improvements
       };
     } catch (error: unknown) {
       console.error('요약 평가 중 오류 발생:', error);
