@@ -44,11 +44,16 @@ class ValidationService {
     );
 
     if (!securityCheck.isSafe) {
+      // 서버 로그에만 자세한 이유 기록 (보안상 클라이언트에는 노출 안 함)
+      console.warn('[보안] 프롬프트 인젝션 감지:', {
+        reason: securityCheck.reason,
+        userSummary: input.userSummary.substring(0, 100) + '...'
+      });
+
       return {
         isValid: false,
         code: 'PROMPT_INJECTION_DETECTED',
-        message: '입력 내용에 보안 위협이 감지되었습니다.',
-        details: securityCheck.reason
+        message: '입력 내용이 정책에 위배됩니다. 일반적인 요약 내용으로 작성해주세요.'
       };
     }
 
