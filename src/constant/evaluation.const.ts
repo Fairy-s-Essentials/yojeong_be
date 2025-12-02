@@ -11,12 +11,12 @@ export const LOGIC_QUALITY_SCORES: Record<
   LogicQuality,
   { percentage: number; description: string }
 > = {
-  EXCELLENT: {
+  PERFECT: {
     percentage: 1.0, // 100%
     description:
       '논리 흐름이 완벽하고 인과관계가 명확함. 주장-근거-결론 구조가 탁월함'
   },
-  VERY_GOOD: {
+  EXCELLENT: {
     percentage: 0.85, // 85%
     description:
       '논리 흐름이 명확하고 구조가 잘 잡혀있으나 사소한 비약이 있음'

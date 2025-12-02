@@ -80,8 +80,8 @@ export interface GetSummariesQueryParams {
  * 논리 품질 평가 등급
  */
 export type LogicQuality =
+  | 'PERFECT'
   | 'EXCELLENT'
-  | 'VERY_GOOD'
   | 'GOOD'
   | 'MODERATE'
   | 'WEAK'

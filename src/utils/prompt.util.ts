@@ -110,8 +110,8 @@ AI 요약 (기준):
 - 분석 내용을 2-3문장으로 기술하세요
 
 **평가 기준:**
-- EXCELLENT: 논리 흐름이 완벽하고 인과관계가 명확함. 주장-근거-결론 구조가 탁월함
-- VERY_GOOD: 논리 흐름이 명확하고 구조가 잘 잡혀있으나 사소한 비약이 있음
+- PERFECT: 논리 흐름이 완벽하고 인과관계가 명확함. 주장-근거-결론 구조가 탁월함
+- EXCELLENT: 논리 흐름이 명확하고 구조가 잘 잡혀있으나 사소한 비약이 있음
 - GOOD: 전체적으로 논리적이나 일부 연결이 약하거나 구조가 다소 느슨함
 - MODERATE: 기본적인 논리는 있으나 흐름이 자연스럽지 않거나 비약이 있음
 - WEAK: 논리가 약하고 단편적 나열 위주. 인과관계가 불분명함
@@ -182,7 +182,7 @@ ${
   "expressionAnalysis": "표현 정확성 분석 내용 (2-3문장)",${
     hasCriticalReading ? '\n  "criticalAnalysis": "비판적 사고 반영 분석 내용 (2-3문장)",' : ''
   }
-  "logicQuality": "EXCELLENT | VERY_GOOD | GOOD | MODERATE | WEAK | POOR",
+  "logicQuality": "PERFECT | EXCELLENT | GOOD | MODERATE | WEAK | POOR",
   "expressionAccuracy": "PERFECT | EXCELLENT | GOOD | MODERATE | WEAK | POOR",${
     hasCriticalReading ? '\n  "criticalThinking": "EXCELLENT | GOOD | WEAK | NONE",' : ''
   }
