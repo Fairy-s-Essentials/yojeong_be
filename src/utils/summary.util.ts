@@ -6,9 +6,7 @@ import {
   SCORE_WEIGHTS,
   DETAIL_PENALTY
 } from '../constant/evaluation.const';
-import {
-  StructuredEvaluation,
-} from '../types/summary';
+import { IntegratedEvaluation } from '../types/summary';
 
 /**
  * 원문 텍스트의 길이에 따라 AI 요약 길이를 반환하는 함수
@@ -89,26 +87,24 @@ const calculateDetailPenalty = (
 };
 
 /**
- * LLM의 구조화된 평가 결과를 바탕으로 최종 similarityScore를 계산하는 함수
- * @param evaluation - LLM이 반환한 구조화된 평가 결과
+ * LLM의 통합 평가 결과를 바탕으로 최종 similarityScore를 계산하는 함수
+ * @param evaluation - IntegratedEvaluation 타입의 통합 평가 결과
  * @param hasCriticalReading - 비판적 읽기 여부
  * @param userSummary - 사용자 요약 (상세함 감점 계산용)
  * @param aiSummary - AI 요약 (상세함 감점 계산용)
  * @returns 최종 similarityScore (0-100)
  */
 export const calculateSimilarityScore = (
-  evaluation: StructuredEvaluation,
+  evaluation: IntegratedEvaluation,
   hasCriticalReading: boolean,
   userSummary?: string,
   aiSummary?: string
 ): number => {
-  const {
-    keyPoints,
-    userCoverage,
-    logicQuality,
-    expressionAccuracy,
-    criticalThinking
-  } = evaluation;
+  // IntegratedEvaluation에서 필요한 데이터 추출
+  const { keyPoints, userCoverage } = evaluation.keyPoints;
+  const { quality: logicQuality } = evaluation.logic;
+  const { accuracy: expressionAccuracy } = evaluation.expression;
+  const criticalThinking = evaluation.critical?.thinking;
 
   // 1. 핵심 포인트 포함도 계산
   const keyPointsCovered = userCoverage.filter(Boolean).length;

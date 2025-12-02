@@ -18,8 +18,7 @@ import {
   ExpressionEvaluation,
   CriticalThinkingEvaluation,
   FeedbackEvaluation,
-  IntegratedEvaluation,
-  StructuredEvaluation
+  IntegratedEvaluation
 } from '../types/summary';
 import { GeminiResponse } from '../types/gemini';
 
@@ -357,32 +356,15 @@ class GeminiService {
         feedback
       };
 
-      // StructuredEvaluation 형식으로 변환 (점수 계산용 레거시 호환)
-      const structuredEvaluation: StructuredEvaluation = {
-        keyPoints: integratedEvaluation.keyPoints.keyPoints,
-        userCoverage: integratedEvaluation.keyPoints.userCoverage,
-        logicAnalysis: integratedEvaluation.logic.analysis,
-        logicQuality: integratedEvaluation.logic.quality,
-        expressionAnalysis: integratedEvaluation.expression.analysis,
-        expressionAccuracy: integratedEvaluation.expression.accuracy,
-        ...(integratedEvaluation.critical && {
-          criticalAnalysis: integratedEvaluation.critical.analysis,
-          criticalThinking: integratedEvaluation.critical.thinking
-        }),
-        aiWellUnderstood: integratedEvaluation.feedback.wellUnderstood,
-        aiMissedPoints: integratedEvaluation.feedback.missedPoints,
-        aiImprovements: integratedEvaluation.feedback.improvements
-      };
-
-      // 서버에서 최종 점수 계산
+      // 최종 점수 계산 (IntegratedEvaluation 직접 사용)
       const similarityScore = calculateSimilarityScore(
-        structuredEvaluation,
+        integratedEvaluation,
         hasCriticalReading,
         userSummary,
         aiSummary
       );
 
-      // 기존 GeminiResponse 형식으로 반환
+      // GeminiResponse 형식으로 반환
       return {
         aiSummary,
         similarityScore,
