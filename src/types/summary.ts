@@ -1,15 +1,27 @@
 import { GeminiResponse } from './gemini';
 
 
+/**
+ * 요약 생성 요청 바디 타입
+ * @param originalText - 원문 텍스트
+ * @param originalUrl - 원문 링크
+ * @param difficultyLevel - 사용자 체감 난이도
+ * @param userSummary - 사용자 요약
+ * @param criticalWeakness - 비판적 읽기 : 약점
+ * @param criticalOpposite - 비판적 읽기 : 반대 의견
+ */
 export interface CreateSummaryReqBody {
-  originalText: string; // 원문 텍스트
-  originalUrl?: string; // 원문 링크
-  difficultyLevel?: number; // 사용자 체감 난이도
-  userSummary: string; // 사용자 요약
-  criticalWeakness?: string; // 비판적 읽기 : 약점
-  criticalOpposite?: string; // 비판적 읽기 : 반대 의견
+  originalText: string;
+  originalUrl?: string;
+  difficultyLevel?: number;
+  userSummary: string;
+  criticalWeakness?: string;
+  criticalOpposite?: string;
 }
 
+/**
+ * 요약 생성 모델 타입
+ */
 export interface InsertSummaryModel
   extends CreateSummaryReqBody,
     GeminiResponse {
@@ -104,18 +116,71 @@ export type ExpressionAccuracy =
 export type CriticalThinking = 'EXCELLENT' | 'GOOD' | 'WEAK' | 'NONE';
 
 /**
- * LLM이 반환하는 평가 분석 결과 (CoT)
+ * 핵심 포인트 추출 결과
  * @param keyPoints - AI가 도출한 핵심 포인트 목록
  * @param userCoverage - 각 포인트의 사용자 요약 포함 여부
- * @param logicAnalysis - 논리 흐름 분석 텍스트
- * @param expressionAnalysis - 표현 정확성 분석 텍스트
- * @param criticalAnalysis - 비판적 사고 반영 분석 (선택적)
- * @param logicQuality - 논리 품질 평가 등급
- * @param expressionAccuracy - 표현 정확성 평가 등급
- * @param criticalThinking - 비판적 사고 반영도 평가 등급(optional)
- * @param aiWellUnderstood - AI가 이해한 핵심 포인트 목록
- * @param aiMissedPoints - AI가 놓친 핵심 포인트 목록
- * @param aiImprovements - AI가 개선할 점 목록
+ */
+export interface KeyPointsEvaluation {
+  keyPoints: string[];
+  userCoverage: boolean[];
+}
+
+/**
+ * 논리 흐름 평가 결과
+ * @param analysis - 논리 흐름 분석 텍스트
+ * @param quality - 논리 품질 평가 등급
+ */
+export interface LogicEvaluation {
+  analysis: string;
+  quality: LogicQuality;
+}
+
+/**
+ * 표현 정확성 평가 결과
+ * @param analysis - 표현 정확성 분석 텍스트
+ * @param accuracy - 표현 정확성 평가 등급
+ */
+export interface ExpressionEvaluation {
+  analysis: string;
+  accuracy: ExpressionAccuracy;
+}
+
+/**
+ * 비판적 사고 반영도 평가 결과
+ * @param analysis - 비판적 사고 반영 분석 텍스트
+ * @param thinking - 비판적 사고 반영도 평가 등급
+ */
+export interface CriticalThinkingEvaluation {
+  analysis: string;
+  thinking: CriticalThinking;
+}
+
+/**
+ * 피드백 생성 결과
+ * @param wellUnderstood - 사용자가 잘 이해한 부분 목록
+ * @param missedPoints - 사용자가 놓친 핵심 포인트 목록
+ * @param improvements - 개선 제안 목록
+ */
+export interface FeedbackEvaluation {
+  wellUnderstood: string[];
+  missedPoints: string[];
+  improvements: string[];
+}
+
+/**
+ * 통합 평가 결과 (모든 평가 차원 통합)
+ */
+export interface IntegratedEvaluation {
+  keyPoints: KeyPointsEvaluation;
+  logic: LogicEvaluation;
+  expression: ExpressionEvaluation;
+  critical?: CriticalThinkingEvaluation;
+  feedback: FeedbackEvaluation;
+}
+
+/**
+ * LLM이 반환하는 평가 분석 결과 (CoT) - 레거시 호환용
+ * @deprecated IntegratedEvaluation 사용 권장
  */
 export interface StructuredEvaluation {
   keyPoints: string[];
