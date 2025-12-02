@@ -8,10 +8,7 @@ export const testGeminiController = async (
 ) => {
   try {
     const input = req.body;
-    console.log(input);
-    // const geminiResponse = await geminiService.generateContent(input);
     const geminiResponse = await geminiService.aiSummary(input.originalText);
-    console.log(geminiResponse);
 
     return res.status(200).json({
       message: 'Gemini API 호출 성공',

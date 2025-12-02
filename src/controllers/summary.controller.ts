@@ -8,10 +8,7 @@ import {
   getTotalSummariesCount
 } from '../models/summary.model';
 import { getUsageByUserId, updateUsage } from '../models/usage.model';
-import {
-  isUsageLimitExceeded,
-  validateSummaryInput
-} from '../utils/validation.util';
+import { isUsageLimitExceeded } from '../utils/validation.util';
 import { getTestSummary, saveLearningNote } from '../services/summary.service';
 import {
   CreateSummaryReqBody,
@@ -20,6 +17,7 @@ import {
   PaginationInfo
 } from '../types/summary';
 import geminiService from '../services/gemini.service';
+import validationService from '../services/validation.service';
 import { sendAuthError } from '../utils/auth.util';
 
 export const getSummaryController = async (
@@ -29,7 +27,6 @@ export const getSummaryController = async (
 ) => {
   try {
     const summary = await getTestSummary();
-    console.log(summary);
     return res.status(200).json({
       success: true,
       message: 'Summary 조회 성공',
@@ -45,7 +42,6 @@ export const createSummaryController = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log('createSummaryController');
   try {
     const { user } = req.session;
     console.log('user in createSummaryController', user);
@@ -70,16 +66,16 @@ export const createSummaryController = async (
       });
     }
 
-    // 사용자 입력값 검증
-    const { isValid, message } = validateSummaryInput(userInput);
+    // 사용자 입력값 검증 (기본 검증 + 보안 검증)
+    const validation = await validationService.validateSummaryCreate(userInput);
 
-    if (!isValid) {
+    if (!validation.isValid) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: '입력값이 올바르지 않습니다.',
-          details: message
+          code: validation.code || 'VALIDATION_ERROR',
+          message: validation.message,
+          details: validation.details
         }
       });
     }
@@ -112,7 +108,6 @@ export const createSummaryController = async (
     // });
     console.log('--------------------------------');
     const aiSummaryResponse = await geminiService.aiSummary(originalText);
-    console.log('aiSummaryResponse', aiSummaryResponse);
     const summaryEvaluationResponse = await geminiService.summaryEvaluation(
       originalText,
       userSummary,
@@ -120,7 +115,6 @@ export const createSummaryController = async (
       criticalWeakness,
       criticalOpposite
     );
-    console.log('--------------------------------');
     console.log('--------------------------------');
     console.log('summaryEvaluationResponse', summaryEvaluationResponse);
     console.log('--------------------------------');
@@ -239,8 +233,6 @@ export const saveLearningNoteController = async (
       sendAuthError(res);
       return;
     }
-    const userId = user.id;
-    // const { id } = req.params;
     const { id, learningNote } = req.body;
     const result = await saveLearningNote(Number(id), learningNote);
     return res.status(200).json({
