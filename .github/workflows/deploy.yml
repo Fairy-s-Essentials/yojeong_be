@@ -36,7 +36,7 @@ jobs:
             echo "pnpm: $(pnpm -v)"
             
             echo "=== Backend: cd project ==="
-            cd ***
+            cd ${{ secrets.EC2_BACKEND_PATH }}
             
             echo "=== Backend: git pull ==="
             git pull origin main
