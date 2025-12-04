@@ -28,7 +28,7 @@ export class AuthService {
       // 2. 액세스 토큰으로 사용자 정보 받기
       const kakaoUser = await KakaoService.getUserInfo(access_token);
 
-      // 3. DB에서 사용자 찾기
+      // 3. DB에서 사용자 찾기 (활성 사용자만)
       let user = await UserModel.findByKakaoId(kakaoUser.id);
 
       // 4. 사용자 정보 준비
@@ -44,12 +44,20 @@ export class AuthService {
           kakaoUser.properties?.profile_image
       };
 
-      // 5. 신규 사용자면 회원가입, 기존 사용자면 정보 업데이트
+      // 5. 사용자 상태에 따라 처리
       if (!user) {
-        // 신규 사용자 - 회원가입
-        user = await UserModel.create(userData);
+        // 활성 사용자가 없음 - 탈퇴한 사용자인지 확인
+        const deletedUser = await UserModel.findDeletedByKakaoId(kakaoUser.id);
+
+        if (deletedUser) {
+          // 탈퇴한 사용자 - 재활성화 (재가입)
+          user = await UserModel.restoreAndUpdate(kakaoUser.id, userData);
+        } else {
+          // 신규 사용자 - 회원가입
+          user = await UserModel.create(userData);
+        }
       } else {
-        // 기존 사용자 - 정보 업데이트 (프로필 변경 반영)
+        // 기존 활성 사용자 - 정보 업데이트 (프로필 변경 반영)
         await UserModel.update(kakaoUser.id, userData);
 
         // 업데이트된 정보로 user 객체 갱신
