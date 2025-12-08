@@ -137,7 +137,7 @@ export class UserModel {
   /**
    * 사용자 소프트 삭제 (회원 탈퇴)
    * - 사용자 테이블: is_deleted = 1로 소프트 삭제
-   * - 관련 데이터: summaries, vocs, usages 물리적 삭제
+   * - 관련 데이터: 그대로 유지 (summaries, vocs, usages)
    * - updated_at은 자동으로 현재 시간으로 업데이트됨 (재가입 제한 체크용)
    * @param kakaoId - 카카오 고유 ID
    */
@@ -156,15 +156,6 @@ export class UserModel {
       if (!userRows || userRows.length === 0) {
         throw new Error('탈퇴할 사용자를 찾을 수 없습니다.');
       }
-
-      const userId = userRows[0].id;
-
-      // 관련 데이터 삭제
-      await Promise.all([
-        conn.query('DELETE FROM summaries WHERE user_id = ?', [userId]),
-        conn.query('DELETE FROM vocs WHERE user_id = ?', [userId]),
-        conn.query('DELETE FROM usages WHERE user_id = ?', [userId])
-      ]);
 
       // 사용자 소프트 삭제 (updated_at은 자동으로 갱신됨)
       await conn.query(
