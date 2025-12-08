@@ -138,6 +138,7 @@ export class UserModel {
    * 사용자 소프트 삭제 (회원 탈퇴)
    * - 사용자 테이블: is_deleted = 1로 소프트 삭제
    * - 관련 데이터: summaries, vocs, usages 물리적 삭제
+   * - updated_at은 자동으로 현재 시간으로 업데이트됨 (재가입 제한 체크용)
    * @param kakaoId - 카카오 고유 ID
    */
   static async softDelete(kakaoId: number): Promise<void> {
@@ -165,7 +166,7 @@ export class UserModel {
         conn.query('DELETE FROM usages WHERE user_id = ?', [userId])
       ]);
 
-      // 사용자 소프트 삭제
+      // 사용자 소프트 삭제 (updated_at은 자동으로 갱신됨)
       await conn.query(
         'UPDATE users SET is_deleted = 1 WHERE kakao_id = ? AND is_deleted = 0',
         [String(kakaoId)]
@@ -176,6 +177,44 @@ export class UserModel {
       // 에러 발생 시 롤백
       await conn.rollback();
       throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  /**
+   * 재가입 가능 여부 확인
+   * - 같은 kakao_id로 탈퇴한 기록이 있는지 확인
+   * - 가장 최근 탈퇴 시간으로부터 24시간이 지났는지 확인
+   * @param kakaoId - 카카오 고유 ID
+   * @returns 재가입 가능 여부
+   */
+  static async checkReJoinEligibility(
+    kakaoId: number
+  ): Promise<{ canReJoin: boolean }> {
+    const conn = await pool.getConnection();
+    try {
+      const query = `
+        SELECT updated_at
+        FROM users
+        WHERE kakao_id = ? AND is_deleted = 1
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+      const rows = (await conn.query(query, [String(kakaoId)])) as DbUser[];
+
+      if (!rows || rows.length === 0) {
+        // 탈퇴 기록 없음 - 가입 가능
+        return { canReJoin: true };
+      }
+
+      const lastWithdrawTime = new Date(rows[0].updated_at);
+      const now = new Date();
+      
+      const timeDiffInMs = now.getTime() - lastWithdrawTime.getTime();
+      const oneDayInMs = 24 * 60 * 60 * 1000; // 24시간 (밀리초)
+
+      return { canReJoin: timeDiffInMs >= oneDayInMs };
     } finally {
       conn.release();
     }
