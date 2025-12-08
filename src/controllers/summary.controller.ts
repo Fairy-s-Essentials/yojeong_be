@@ -3,11 +3,10 @@ import { Request, Response, NextFunction } from 'express';
 import {
   getScoreAverageByUserId,
   getSummaryDetailById,
-  insertSummary,
   getSummariesWithPagination,
   getTotalSummariesCount
 } from '../models/summary.model';
-import { getUsageByUserId, updateUsage } from '../models/usage.model';
+import { getUsageByUserId } from '../models/usage.model';
 import { isUsageLimitExceeded } from '../utils/validation.util';
 import { getTestSummary, saveLearningNote } from '../services/summary.service';
 import {
@@ -16,9 +15,9 @@ import {
   SummaryListItem,
   PaginationInfo
 } from '../types/summary';
-import geminiService from '../services/gemini.service';
 import validationService from '../services/validation.service';
 import { sendAuthError } from '../utils/auth.util';
+import sseService from '../services/sse.service';
 
 export const getSummaryController = async (
   req: Request,
@@ -37,8 +36,12 @@ export const getSummaryController = async (
   }
 };
 
+/**
+ * Summary 생성 컨트롤러 (SSE 버전)
+ * 즉시 jobId를 반환하고 백그라운드에서 AI 분석 처리
+ */
 export const createSummaryController = async (
-  req: Request<{}, {}, CreateSummaryReqBody>,
+  req: Request<object, object, CreateSummaryReqBody>,
   res: Response,
   next: NextFunction
 ) => {
@@ -80,90 +83,108 @@ export const createSummaryController = async (
       });
     }
 
-    const {
-      originalText,
-      originalUrl,
-      difficultyLevel,
-      userSummary,
-      criticalWeakness,
-      criticalOpposite
-    } = userInput;
+    // Job 생성 및 즉시 응답
+    const jobId = sseService.createJob(userId);
 
-    // AI 분석 포함 Summary 생성
-    // const summaryData = await createSummary({
-    //   userId,
-    //   originalText,
-    //   originalUrl,
-    //   difficultyLevel,
-    //   userSummary,
-    //   criticalWeakness,
-    //   criticalOpposite
-    // });
-
-    // const aiSummaryResponse = await geminiService.generateContent({
-    //   originalText,
-    //   userSummary,
-    //   criticalWeakness,
-    //   criticalOpposite
-    // });
-    console.log('--------------------------------');
-    const aiSummaryResponse = await geminiService.aiSummary(originalText);
-    const summaryEvaluationResponse = await geminiService.summaryEvaluation(
-      originalText,
-      userSummary,
-      aiSummaryResponse.aiSummary,
-      criticalWeakness,
-      criticalOpposite
-    );
-    console.log('--------------------------------');
-    console.log('summaryEvaluationResponse', summaryEvaluationResponse);
-    console.log('--------------------------------');
-    // const resultId = await insertSummary({
-    //   userId,
-    //   originalText,
-    //   originalUrl,
-    //   difficultyLevel,
-    //   userSummary,
-    //   criticalWeakness,
-    //   criticalOpposite,
-    //   ...aiSummaryResponse
-    // });
-    const resultId = await insertSummary({
+    // 백그라운드에서 AI 분석 작업 처리 (Promise를 기다리지 않음)
+    sseService.processJob(jobId, {
       userId,
-      originalText,
-      originalUrl,
-      difficultyLevel,
-      userSummary,
-      criticalWeakness,
-      criticalOpposite,
-      ...summaryEvaluationResponse
+      userInput
     });
 
-    // 분석 성공 시 사용량 업데이트
-    const resultUsage = await updateUsage(userId);
-
-    // 성공 응답
-    return res.status(200).json({
+    // 즉시 jobId 반환
+    return res.status(202).json({
       success: true,
-      message: 'Summary 생성 성공',
+      message: '분석 작업이 시작되었습니다. SSE로 진행 상황을 구독하세요.',
       data: {
-        resultId: Number(resultId),
-        usage: resultUsage.usage,
-        limit: resultUsage.limit
+        jobId
       }
     });
-  } catch (error: any) {
-    // AI 서비스 에러 처리
-    if (error.message === 'AI_SERVICE_ERROR') {
-      return res.status(500).json({
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * SSE 구독 엔드포인트
+ * 클라이언트가 jobId로 작업 진행 상황을 실시간으로 수신
+ */
+export const subscribeSummaryJobController = async (
+  req: Request<{ jobId: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+
+    const { jobId } = req.params;
+
+    // SSE 클라이언트 등록
+    const registered = sseService.registerClient(jobId, res, user.id);
+
+    if (!registered) {
+      return res.status(404).json({
         success: false,
         error: {
-          code: 'AI_SERVICE_ERROR',
-          message: 'AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+          code: 'JOB_NOT_FOUND',
+          message: '해당 작업을 찾을 수 없습니다.'
         }
       });
     }
 
+    // SSE 연결이 유지되므로 여기서 응답을 보내지 않음
+    // sseService.registerClient 내부에서 SSE 이벤트를 전송함
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * Job 상태 조회 (폴링 대비용)
+ * SSE가 지원되지 않는 환경에서 사용
+ */
+export const getJobStatusController = async (
+  req: Request<{ jobId: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+
+    const { jobId } = req.params;
+    const job = sseService.getJobStatus(jobId, user.id);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'JOB_NOT_FOUND',
+          message: '해당 작업을 찾을 수 없습니다.'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        jobId: job.jobId,
+        status: job.status,
+        step: job.currentStep,
+        progress: job.progress,
+        message: job.message,
+        result: job.result,
+        error: job.error
+      }
+    });
+  } catch (error: unknown) {
     next(error);
   }
 };
