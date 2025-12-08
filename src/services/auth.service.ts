@@ -46,16 +46,9 @@ export class AuthService {
 
       // 5. 사용자 상태에 따라 처리
       if (!user) {
-        // 활성 사용자가 없음 - 탈퇴한 사용자인지 확인
-        const deletedUser = await UserModel.findDeletedByKakaoId(kakaoUser.id);
-
-        if (deletedUser) {
-          // 탈퇴한 사용자 - 재활성화 (재가입)
-          user = await UserModel.restoreAndUpdate(kakaoUser.id, userData);
-        } else {
-          // 신규 사용자 - 회원가입
-          user = await UserModel.create(userData);
-        }
+        // 활성 사용자가 없음 - 신규 가입 또는 재가입
+        // (재가입 시에도 새로운 user_id로 생성)
+        user = await UserModel.create(userData);
       } else {
         // 기존 활성 사용자 - 정보 업데이트 (프로필 변경 반영)
         await UserModel.update(kakaoUser.id, userData);

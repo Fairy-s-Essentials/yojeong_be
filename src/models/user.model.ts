@@ -181,68 +181,6 @@ export class UserModel {
     }
   }
 
-  /**
-   * 탈퇴한 사용자 찾기 (재가입 처리용)
-   * @param kakaoId - 카카오 고유 ID
-   * @returns 탈퇴한 사용자 정보 또는 null
-   */
-  static async findDeletedByKakaoId(kakaoId: number): Promise<User | null> {
-    const conn = await pool.getConnection();
-    try {
-      const query = 'SELECT * FROM users WHERE kakao_id = ? AND is_deleted = 1';
-      const rows = (await conn.query(query, [String(kakaoId)])) as DbUser[];
-
-      if (!rows || rows.length === 0) {
-        return null;
-      }
-
-      return this.dbToUser(rows[0]);
-    } finally {
-      conn.release();
-    }
-  }
-
-  /**
-   * 탈퇴한 사용자 복원 및 정보 업데이트 (재가입)
-   * @param kakaoId - 카카오 고유 ID
-   * @param userData - 업데이트할 사용자 정보
-   * @returns 복원된 사용자 정보
-   */
-  static async restoreAndUpdate(
-    kakaoId: number,
-    userData: {
-      email?: string;
-      nickname: string;
-      profile_image?: string;
-    }
-  ): Promise<User> {
-    const conn = await pool.getConnection();
-    try {
-      const query = `
-        UPDATE users
-        SET email = ?, nickname = ?, profile_image = ?, is_deleted = 0
-        WHERE kakao_id = ?
-      `;
-
-      await conn.query(query, [
-        userData.email || null,
-        userData.nickname,
-        userData.profile_image || null,
-        String(kakaoId)
-      ]);
-
-      // 복원된 사용자 정보 조회
-      const user = await this.findByKakaoId(kakaoId);
-
-      if (!user) {
-        throw new Error('사용자 복원 후 조회 실패');
-      }
-
-      return user;
-    } finally {
-      conn.release();
-    }
-  }
 }
 
 export default UserModel;
