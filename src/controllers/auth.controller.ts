@@ -85,8 +85,15 @@ export class AuthController {
       });
     } catch (error) {
       console.error('[인증 컨트롤러] 카카오 콜백 오류:', error);
+
+      // 재가입 제한 에러 구분
+      const errorCode =
+        (error as any)?.code === 'REJOIN_RESTRICTED'
+          ? 'rejoin_restricted'
+          : 'login_failed';
+
       res.redirect(
-        `${process.env.FRONTEND_URL}/auth/callback?success=false&error=login_failed`
+        `${process.env.FRONTEND_URL}/auth/callback?success=false&error=${errorCode}`
       );
     }
   }
