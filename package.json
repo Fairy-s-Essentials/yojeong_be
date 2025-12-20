@@ -2,6 +2,7 @@
   "name": "yojeong_be",
   "version": "1.0.0",
   "main": "index.js",
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
@@ -14,8 +15,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "lint-staged": {
-    "*.{js,ts}": "eslint --fix",
-    "*.{js,ts,json,md}": "prettier --write"
+    "*.{js,ts}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md}": "prettier --write"
   },
   "repository": {
     "type": "git",
