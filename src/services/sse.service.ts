@@ -10,7 +10,8 @@ class SSEService {
   private jobs: Map<string, SSEJob> = new Map();
 
   // SSE 클라이언트 연결 저장소
-  private clients: Map<string, SSEClient> = new Map();
+  // private clients: Map<string, SSEClient> = new Map();
+  private clients: Map<string, Set<SSEClient>> = new Map();
 
   // Job 만료 시간 (30분)
   private readonly JOB_EXPIRY_MS = 30 * 60 * 1000;
@@ -75,43 +76,136 @@ class SSEService {
   /**
    * SSE 클라이언트 연결 등록
    */
+  // registerClient(jobId: string, res: Response, userId: number): boolean {
+  //   const job = this.jobs.get(jobId);
+
+  //   // Job이 없거나 다른 사용자의 Job인 경우
+  //   if (!job || job.userId !== userId) {
+  //     return false;
+  //   }
+
+  //   // SSE 헤더 설정
+  //   res.setHeader('Content-Type', 'text/event-stream');
+  //   res.setHeader('Cache-Control', 'no-cache');
+  //   res.setHeader('Connection', 'keep-alive');
+  //   res.setHeader('X-Accel-Buffering', 'no'); // Nginx 버퍼링 비활성화
+  //   res.flushHeaders();
+
+  //   // 클라이언트 등록
+  //   this.clients.set(jobId, { res, userId });
+
+  //   // 현재 상태 즉시 전송
+  //   this.sendEventToClient(jobId);
+
+  //   // 연결 종료 시 클라이언트 제거
+  //   res.on('close', () => {
+  //     this.clients.delete(jobId);
+  //   });
+
+  //   return true;
+  // }
   registerClient(jobId: string, res: Response, userId: number): boolean {
     const job = this.jobs.get(jobId);
+    if (!job || job.userId !== userId) return false;
 
-    // Job이 없거나 다른 사용자의 Job인 경우
-    if (!job || job.userId !== userId) {
-      return false;
-    }
-
-    // SSE 헤더 설정
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Nginx 버퍼링 비활성화
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    // 클라이언트 등록
-    this.clients.set(jobId, { res, userId });
+    // ✅ set 확보
+    if (!this.clients.has(jobId)) {
+      this.clients.set(jobId, new Set());
+    }
 
-    // 현재 상태 즉시 전송
-    this.sendEventToClient(jobId);
+    const client: SSEClient = { res, userId };
+    this.clients.get(jobId)!.add(client);
 
-    // 연결 종료 시 클라이언트 제거
+    // ✅ “스냅샷” 즉시 1번 쏴주기 (재연결 UX 핵심)
+    this.sendSnapshotToClient(jobId, client);
+
+    // ✅ heartbeat (프록시/브라우저 silent close 방지)
+    const heartbeat = setInterval(() => {
+      // comment line is valid SSE heartbeat
+      res.write(`: ping\n\n`);
+    }, 15000);
+
     res.on('close', () => {
-      this.clients.delete(jobId);
+      clearInterval(heartbeat);
+      const set = this.clients.get(jobId);
+      if (!set) return;
+      set.delete(client);
+      if (set.size === 0) this.clients.delete(jobId);
     });
 
     return true;
   }
 
   /**
+   * SSE 클라이언트에 즉시 “스냅샷” 이벤트 전송
+   * @param jobId
+   * @param client
+   * @returns
+   */
+  private sendSnapshotToClient(jobId: string, client: SSEClient): void {
+    const job = this.jobs.get(jobId);
+    if (!job) return;
+
+    const eventData: SSEEventData = {
+      jobId: job.jobId,
+      status: job.status,
+      step: job.currentStep,
+      progress: job.progress,
+      message: job.message,
+      result: job.result,
+      error: job.error
+    };
+
+    // ✅ snapshot 이벤트 타입 하나 새로 두는 게 깔끔함
+    client.res.write(`event: snapshot\n`);
+    client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+  }
+
+  /**
    * SSE 이벤트 전송
    */
-  private sendEventToClient(jobId: string): void {
-    const client = this.clients.get(jobId);
-    const job = this.jobs.get(jobId);
+  // private sendEventToClient(jobId: string): void {
+  //   const client = this.clients.get(jobId);
+  //   const job = this.jobs.get(jobId);
 
-    if (!client || !job) return;
+  //   if (!client || !job) return;
+
+  //   const eventData: SSEEventData = {
+  //     jobId: job.jobId,
+  //     status: job.status,
+  //     step: job.currentStep,
+  //     progress: job.progress,
+  //     message: job.message,
+  //     result: job.result,
+  //     error: job.error
+  //   };
+
+  //   const eventType =
+  //     job.status === 'completed'
+  //       ? 'completed'
+  //       : job.status === 'failed'
+  //         ? 'error'
+  //         : 'progress';
+
+  //   client.res.write(`event: ${eventType}\n`);
+  //   client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+
+  //   // 완료 또는 실패 시 연결 종료
+  //   if (job.status === 'completed' || job.status === 'failed') {
+  //     client.res.end();
+  //     this.clients.delete(jobId);
+  //   }
+  // }
+  private sendEventToClient(jobId: string): void {
+    const job = this.jobs.get(jobId);
+    const clientSet = this.clients.get(jobId);
+    if (!job || !clientSet || clientSet.size === 0) return;
 
     const eventData: SSEEventData = {
       jobId: job.jobId,
@@ -130,12 +224,16 @@ class SSEService {
           ? 'error'
           : 'progress';
 
-    client.res.write(`event: ${eventType}\n`);
-    client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    for (const client of clientSet) {
+      client.res.write(`event: ${eventType}\n`);
+      client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    }
 
-    // 완료 또는 실패 시 연결 종료
+    // 완료/실패면 모두 종료
     if (job.status === 'completed' || job.status === 'failed') {
-      client.res.end();
+      for (const client of clientSet) {
+        client.res.end();
+      }
       this.clients.delete(jobId);
     }
   }
