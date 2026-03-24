@@ -1,6 +1,5 @@
 import { GeminiResponse } from './gemini';
 
-
 /**
  * 요약 생성 요청 바디 타입
  * @param originalText - 원문 텍스트
@@ -17,6 +16,7 @@ export interface CreateSummaryReqBody {
   userSummary: string;
   criticalWeakness?: string;
   criticalOpposite?: string;
+  criticalApplication?: string;
 }
 
 /**

@@ -100,7 +100,7 @@ class ExtractService {
       // AI가 요약 적합성 판단
       const qualityCheck = await this.checkContentQuality(content);
       if (!qualityCheck.isSuitable) {
-        return { status: 'unsuitable_content', content: null };
+        return { status: 'unsuitable_content', content };
       }
 
       // 원문 5000자 제한 적용
