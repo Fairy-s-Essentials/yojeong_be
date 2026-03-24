@@ -1,7 +1,8 @@
 export type ExtractStatus =
   | 'success'
   | 'truncated'
-  | 'insufficient_content'
+  | 'under_limit'
+  | 'unsuitable_content'
   | 'fetch_failed';
 
 export interface ExtractResult {

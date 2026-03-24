@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { sendAuthError } from '../utils/auth.util';
-import { extractContentFromUrl } from '../services/extract.service';
+import extractService from '../services/extract.service';
 
 export const extractController = async (
   req: Request<{}, {}, { url: string }>,
@@ -23,7 +23,7 @@ export const extractController = async (
         });
       }
 
-      const result = await extractContentFromUrl(url);
+      const result = await extractService.extractContentFromUrl(url);
 
       return res.status(200).json({
         success: true,
