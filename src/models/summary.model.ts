@@ -66,8 +66,8 @@ export const insertSummary = async (inputData: InsertSummaryModel) => {
   try {
     const query = `
     INSERT INTO summaries
-    (user_id, original_text, original_url, difficulty_level, user_summary, critical_weakness, critical_opposite, ai_summary, similarity_score, ai_well_understood, ai_missed_points, ai_improvements)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (user_id, original_text, original_url, difficulty_level, user_summary, critical_weakness, critical_opposite, critical_application, ai_summary, similarity_score, ai_well_understood, ai_missed_points, ai_improvements)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
@@ -78,6 +78,7 @@ export const insertSummary = async (inputData: InsertSummaryModel) => {
       inputData.userSummary,
       inputData.criticalWeakness,
       inputData.criticalOpposite,
+      inputData.criticalApplication ?? '',
       inputData.aiSummary,
       inputData.similarityScore,
       JSON.stringify(inputData.aiWellUnderstood),
