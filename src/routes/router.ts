@@ -6,6 +6,7 @@ import authRouter from "./authRouter";
 import historyRouter from './historyRouter';
 import usageRouter from './usageRouter';
 import vocRouter from './vocRouter';
+import extractRouter from './extractRouter';
 
 const RootRouter = Router();
 
@@ -16,5 +17,6 @@ RootRouter.use("/auth", authRouter);
 RootRouter.use("/history", historyRouter);
 RootRouter.use("/usage-limit", usageRouter);
 RootRouter.use("/voc", vocRouter);
+RootRouter.use("/extract", extractRouter);
 
 export default RootRouter;
