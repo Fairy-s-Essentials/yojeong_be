@@ -16,6 +16,9 @@ class SSEService {
   // Job 만료 시간 (30분)
   private readonly JOB_EXPIRY_MS = 30 * 60 * 1000;
 
+  // completed 상태 자동 acknowledged 시간 (10분)
+  private readonly AUTO_ACK_MS = 10 * 60 * 1000;
+
   // 주기적으로 만료된 Job 정리
   constructor() {
     setInterval(() => this.cleanupExpiredJobs(), 5 * 60 * 1000); // 5분마다
@@ -73,37 +76,6 @@ class SSEService {
     this.sendEventToClient(jobId);
   }
 
-  /**
-   * SSE 클라이언트 연결 등록
-   */
-  // registerClient(jobId: string, res: Response, userId: number): boolean {
-  //   const job = this.jobs.get(jobId);
-
-  //   // Job이 없거나 다른 사용자의 Job인 경우
-  //   if (!job || job.userId !== userId) {
-  //     return false;
-  //   }
-
-  //   // SSE 헤더 설정
-  //   res.setHeader('Content-Type', 'text/event-stream');
-  //   res.setHeader('Cache-Control', 'no-cache');
-  //   res.setHeader('Connection', 'keep-alive');
-  //   res.setHeader('X-Accel-Buffering', 'no'); // Nginx 버퍼링 비활성화
-  //   res.flushHeaders();
-
-  //   // 클라이언트 등록
-  //   this.clients.set(jobId, { res, userId });
-
-  //   // 현재 상태 즉시 전송
-  //   this.sendEventToClient(jobId);
-
-  //   // 연결 종료 시 클라이언트 제거
-  //   res.on('close', () => {
-  //     this.clients.delete(jobId);
-  //   });
-
-  //   return true;
-  // }
   registerClient(jobId: string, res: Response, userId: number): boolean {
     const job = this.jobs.get(jobId);
     if (!job || job.userId !== userId) return false;
@@ -167,41 +139,6 @@ class SSEService {
     client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
   }
 
-  /**
-   * SSE 이벤트 전송
-   */
-  // private sendEventToClient(jobId: string): void {
-  //   const client = this.clients.get(jobId);
-  //   const job = this.jobs.get(jobId);
-
-  //   if (!client || !job) return;
-
-  //   const eventData: SSEEventData = {
-  //     jobId: job.jobId,
-  //     status: job.status,
-  //     step: job.currentStep,
-  //     progress: job.progress,
-  //     message: job.message,
-  //     result: job.result,
-  //     error: job.error
-  //   };
-
-  //   const eventType =
-  //     job.status === 'completed'
-  //       ? 'completed'
-  //       : job.status === 'failed'
-  //         ? 'error'
-  //         : 'progress';
-
-  //   client.res.write(`event: ${eventType}\n`);
-  //   client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
-
-  //   // 완료 또는 실패 시 연결 종료
-  //   if (job.status === 'completed' || job.status === 'failed') {
-  //     client.res.end();
-  //     this.clients.delete(jobId);
-  //   }
-  // }
   private sendEventToClient(jobId: string): void {
     const job = this.jobs.get(jobId);
     const clientSet = this.clients.get(jobId);
@@ -341,8 +278,21 @@ class SSEService {
   private cleanupExpiredJobs(): void {
     const now = Date.now();
     const expiredJobs: string[] = [];
+    let autoAckCount = 0;
 
     this.jobs.forEach((job, jobId) => {
+      // completed/failed 상태에서 일정 시간 지나면 자동 acknowledged
+      if (
+        (job.status === 'completed' || job.status === 'failed') &&
+        now - job.updatedAt.getTime() > this.AUTO_ACK_MS
+      ) {
+        job.status = 'acknowledged';
+        job.currentStep = 'acknowledged';
+        job.updatedAt = new Date();
+        autoAckCount++;
+      }
+
+      // 만료된 Job 제거
       if (now - job.createdAt.getTime() > this.JOB_EXPIRY_MS) {
         expiredJobs.push(jobId);
       }
@@ -355,6 +305,9 @@ class SSEService {
 
     if (expiredJobs.length > 0) {
       console.log(`[SSE] ${expiredJobs.length}개의 만료된 Job 정리됨`);
+    }
+    if (autoAckCount > 0) {
+      console.log(`[SSE] ${autoAckCount}개의 Job 자동 acknowledged 처리됨`);
     }
   }
 
@@ -369,6 +322,32 @@ class SSEService {
     }
 
     return job;
+  }
+
+  /**
+   * 로그인 사용자의 미확인(acknowledged 아닌) 활성 Job 조회
+   */
+  getActiveJob(userId: number): SSEJob | null {
+    for (const job of this.jobs.values()) {
+      if (job.userId === userId && job.status !== 'acknowledged') {
+        return job;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Job 상태를 acknowledged로 변경
+   */
+  acknowledgeJob(jobId: string, userId: number): boolean {
+    const job = this.jobs.get(jobId);
+    if (!job || job.userId !== userId) return false;
+    if (job.status !== 'completed' && job.status !== 'failed') return false;
+
+    job.status = 'acknowledged';
+    job.currentStep = 'acknowledged';
+    job.updatedAt = new Date();
+    return true;
   }
 }
 
