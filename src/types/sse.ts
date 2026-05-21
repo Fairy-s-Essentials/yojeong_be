@@ -3,7 +3,12 @@ import { CreateSummaryReqBody } from './summary';
 /**
  * SSE Job 상태
  */
-export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type JobStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'acknowledged'
+  | 'failed';
 
 /**
  * SSE 진행 단계
@@ -14,6 +19,7 @@ export type JobStep =
   | 'ai_evaluation' // AI 평가 중
   | 'saving' // DB 저장 중
   | 'completed' // 완료
+  | 'acknowledged' // 사용자 확인 완료
   | 'failed'; // 실패
 
 /**

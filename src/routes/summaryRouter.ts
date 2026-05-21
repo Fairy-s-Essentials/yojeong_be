@@ -6,7 +6,9 @@ import {
   getSummaryDetailByIdController,
   saveLearningNoteController,
   subscribeSummaryJobController,
-  getJobStatusController
+  getJobStatusController,
+  getActiveJobController,
+  acknowledgeJobController
 } from '../controllers/summary.controller';
 
 const summaryRouter = Router();
@@ -19,8 +21,14 @@ summaryRouter.post('/', createSummaryController);
 // SSE 구독 엔드포인트
 summaryRouter.get('/sse/:jobId', subscribeSummaryJobController);
 
+// 미확인 활성 Job 조회 (/:jobId보다 위에 배치)
+summaryRouter.get('/job/active', getActiveJobController);
+
 // Job 상태 조회 (폴링 대비용)
 summaryRouter.get('/job/:jobId', getJobStatusController);
+
+// Job acknowledged 처리
+summaryRouter.patch('/job/:jobId/acknowledge', acknowledgeJobController);
 
 summaryRouter.post('/learning-note', saveLearningNoteController);
 

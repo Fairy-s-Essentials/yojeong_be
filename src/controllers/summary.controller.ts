@@ -189,6 +189,84 @@ export const getJobStatusController = async (
   }
 };
 
+/**
+ * 로그인 사용자의 미확인 활성 Job 조회
+ */
+export const getActiveJobController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+
+    const job = sseService.getActiveJob(user.id);
+
+    if (!job) {
+      return res.status(200).json({
+        success: true,
+        data: null
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        jobId: job.jobId,
+        status: job.status,
+        step: job.currentStep,
+        progress: job.progress,
+        message: job.message,
+        result: job.result,
+        error: job.error
+      }
+    });
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * Job 상태를 acknowledged로 변경
+ */
+export const acknowledgeJobController = async (
+  req: Request<{ jobId: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+
+    const { jobId } = req.params;
+    const acknowledged = sseService.acknowledgeJob(jobId, user.id);
+
+    if (!acknowledged) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'JOB_NOT_FOUND',
+          message: '해당 작업을 찾을 수 없거나 아직 완료되지 않았습니다.'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: '작업이 확인 처리되었습니다.'
+    });
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
 export const getSummaryDetailByIdController = async (
   req: Request,
   res: Response,
