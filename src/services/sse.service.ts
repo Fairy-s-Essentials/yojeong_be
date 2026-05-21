@@ -326,14 +326,18 @@ class SSEService {
 
   /**
    * 로그인 사용자의 미확인(acknowledged 아닌) 활성 Job 조회
+   * 동일 사용자의 미확인 job이 여러 개일 경우 가장 최근에 생성된 job을 반환
    */
   getActiveJob(userId: number): SSEJob | null {
+    let latest: SSEJob | null = null;
+
     for (const job of this.jobs.values()) {
-      if (job.userId === userId && job.status !== 'acknowledged') {
-        return job;
+      if (job.userId !== userId || job.status === 'acknowledged') continue;
+      if (!latest || job.createdAt > latest.createdAt) {
+        latest = job;
       }
     }
-    return null;
+    return latest;
   }
 
   /**
