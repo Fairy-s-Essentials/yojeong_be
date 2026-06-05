@@ -6,6 +6,12 @@ import {
   getSummariesWithPagination,
   getTotalSummariesCount
 } from '../models/summary.model';
+import {
+  deleteSummaryFeedback,
+  getSummaryFeedbackReaction,
+  SummaryFeedbackReaction,
+  upsertSummaryFeedback
+} from '../models/summaryFeedback.model';
 import { getUsageByUserId } from '../models/usage.model';
 import { isUsageLimitExceeded } from '../utils/validation.util';
 import { getTestSummary, saveLearningNote } from '../services/summary.service';
@@ -283,7 +289,25 @@ export const getSummaryDetailByIdController = async (
 
     const averageScore = await getScoreAverageByUserId(userId);
 
-    const summary = await getSummaryDetailById(Number(id));
+    const summary = await getSummaryDetailById(Number(id), userId);
+
+    if (!summary) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SUMMARY_NOT_FOUND',
+          message: 'Summary를 찾을 수 없습니다.'
+        }
+      });
+    }
+
+    let feedbackReaction: SummaryFeedbackReaction | null = null;
+    try {
+      feedbackReaction = await getSummaryFeedbackReaction(Number(id), userId);
+    } catch (error) {
+      console.error('Summary 피드백 조회 실패:', error);
+    }
+
     const returnData = {
       id: summary.id,
       originalText: summary.original_text,
@@ -298,18 +322,9 @@ export const getSummaryDetailByIdController = async (
       aiMissedPoints: JSON.parse(summary.ai_missed_points),
       aiImprovements: JSON.parse(summary.ai_improvements),
       learningNote: summary.learning_note,
+      feedbackReaction,
       createdAt: summary.created_at
     };
-
-    if (returnData.id === null) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'SUMMARY_NOT_FOUND',
-          message: 'Summary를 찾을 수 없습니다.'
-        }
-      });
-    }
 
     return res.status(200).json({
       success: true,
@@ -332,14 +347,81 @@ export const saveLearningNoteController = async (
       sendAuthError(res);
       return;
     }
+    const userId = user.id;
     const { id, learningNote } = req.body;
-    const result = await saveLearningNote(Number(id), learningNote);
+    const result = await saveLearningNote(Number(id), userId, learningNote);
+    
     return res.status(200).json({
       success: true,
       message: 'Learning Note 저장 성공',
       data: result
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const saveSummaryFeedbackController = async (
+  req: Request<{ id: string }, object, { reaction: SummaryFeedbackReaction | null }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { user } = req.session;
+    if (!user) {
+      sendAuthError(res);
+      return;
+    }
+
+    const summaryId = Number(req.params.id);
+    const userId = user.id;
+    const { reaction } = req.body;
+
+    if (!Number.isInteger(summaryId) || summaryId <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SUMMARY_ID',
+          message: '유효하지 않은 Summary ID입니다.'
+        }
+      });
+    }
+
+    const summary = await getSummaryDetailById(summaryId, userId);
+    if (!summary) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SUMMARY_NOT_FOUND',
+          message: 'Summary를 찾을 수 없습니다.'
+        }
+      });
+    }
+
+    if (reaction === null) {
+      await deleteSummaryFeedback(summaryId, userId);
+    } else if (reaction === 'LIKE' || reaction === 'DISLIKE') {
+      await upsertSummaryFeedback(summaryId, userId, reaction);
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_FEEDBACK_REACTION',
+          message: 'reaction은 LIKE, DISLIKE, null 중 하나여야 합니다.'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Summary 피드백 저장 성공',
+      data: {
+        summaryId,
+        feedbackReaction: reaction
+      }
+    });
+  } catch (error) {
+    console.error('Summary 피드백 저장 실패:', error);
     next(error);
   }
 };

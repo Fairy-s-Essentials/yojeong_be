@@ -10,13 +10,17 @@ export async function getTestSummary() {
   }
 }
 
-export async function saveLearningNote(id: number, learningNote: string) {
+export async function saveLearningNote(
+  id: number,
+  userId: number,
+  learningNote: string
+) {
   const query = `
   UPDATE summaries
   SET learning_note = ?
-  WHERE id = ?
+  WHERE id = ? AND user_id = ? AND is_deleted = 0
   `;
-  const params = [learningNote, id];
+  const params = [learningNote, id, userId];
   const result = await pool.query(query, params);
   return result[0];
 }
