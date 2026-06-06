@@ -8,7 +8,8 @@ import {
   subscribeSummaryJobController,
   getJobStatusController,
   getActiveJobController,
-  acknowledgeJobController
+  acknowledgeJobController,
+  saveSummaryFeedbackController
 } from '../controllers/summary.controller';
 
 const summaryRouter = Router();
@@ -31,6 +32,8 @@ summaryRouter.get('/job/:jobId', getJobStatusController);
 summaryRouter.patch('/job/:jobId/acknowledge', acknowledgeJobController);
 
 summaryRouter.post('/learning-note', saveLearningNoteController);
+
+summaryRouter.post('/:id/feedback', saveSummaryFeedbackController);
 
 // Summary 상세 조회 (맨 마지막에 배치 - :id는 모든 경로와 매칭될 수 있음)
 summaryRouter.get('/:id', getSummaryDetailByIdController);

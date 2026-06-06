@@ -218,13 +218,14 @@ export const getContinuousLearningDaysByUserId = async (userId: number) => {
   }
 };
 
-export const getSummaryDetailById = async (id: number) => {
+export const getSummaryDetailById = async (id: number, userId: number) => {
   const query = `
-  SELECT * FROM summaries WHERE id = ? AND is_deleted = 0
+  SELECT *
+  FROM summaries
+  WHERE id = ? AND user_id = ? AND is_deleted = 0
   `;
-  const params = [id];
-  const result: any = await pool.query(query, params);
-  console.log(result);
+  const params = [id, userId];
+  const result = (await pool.query(query, params)) as Record<string, unknown>[];
   return normalizeNumericValues(result[0]);
 };
 
